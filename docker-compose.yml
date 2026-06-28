@@ -1,0 +1,45 @@
+# Runs the BackpackLink backend + admin panel together.
+#   docker compose up --build
+# Backend:  http://localhost:4000
+# Admin:    http://localhost:3001   (login with ADMIN_EMAIL / ADMIN_PASSWORD)
+#
+# Secrets (ESIMCARD_TOKEN, JWT_SECRET, Stripe keys, markup, etc.) are read from
+# the root .env via env_file — they are NOT baked into the images.
+
+services:
+  api:
+    build:
+      context: ./apps/api
+    container_name: bpl-api
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      API_PORT: "4000"
+      # SQLite lives on a named volume (kept out of the image / schema dir).
+      DATABASE_URL: "file:/data/dev.db"
+      # Seeds an admin user on first boot (change these!).
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@backpacklink.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme123}
+    ports:
+      - "4000:4000"
+    volumes:
+      - bpl-data:/data
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: ./apps/admin
+      args:
+        # The admin runs in the browser, so it must reach the API at the
+        # host-published URL (not the docker-internal hostname).
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+    container_name: bpl-admin
+    ports:
+      - "3001:3001"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  bpl-data:

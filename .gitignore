@@ -1,0 +1,35 @@
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+
+# Build output
+dist/
+build/
+.next/
+out/
+
+# Database (dev SQLite)
+*.db
+*.db-journal
+
+# Flutter / Dart
+apps/mobile/.dart_tool/
+apps/mobile/build/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/pubspec.lock
+
+# Probe output dumps
+scripts/_dumps/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

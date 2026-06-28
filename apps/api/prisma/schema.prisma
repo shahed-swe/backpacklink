@@ -1,0 +1,94 @@
+// BackpackLink data model — our own database (customers, eSIM mapping, orders).
+// Dev uses SQLite (zero-setup). For production switch provider to "postgresql".
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  phone        String?
+  name         String?
+  passwordHash String
+  role         String   @default("customer") // customer | admin
+  country      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  esims  Esim[]
+  orders Order[]
+}
+
+// The critical customer <-> eSIM mapping. esimcard has no idea which customer
+// owns which eSIM — this table is the link, populated at fulfillment time.
+model Esim {
+  id                   String   @id @default(cuid())
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id])
+  providerEsimId       String // esimcard sim uuid
+  iccid                String
+  status               String   @default("Pending")
+  lastBundle           String?
+  // install payload captured from esimcard /my-esims
+  qrCodeText           String?
+  smdpAddress          String?
+  matchingId           String?
+  universalLinkIos     String?
+  universalLinkAndroid String?
+  pukCode              String?
+  apn                  String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  orders Order[]
+
+  @@index([userId])
+  @@index([iccid])
+}
+
+model Order {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  esimId            String?
+  esim              Esim?    @relation(fields: [esimId], references: [id])
+  providerPackageId String
+  packageName       String
+  packageType       String // DATA-ONLY | DATA-VOICE-SMS
+  retailPrice       Float
+  wholesalePrice    Float
+  currency          String   @default("USD")
+  // pending -> paid -> fulfilling -> completed | failed | refunded
+  status            String   @default("pending")
+  isTopup           Boolean  @default(false)
+  topupIccid        String?
+  paymentProvider   String? // stripe
+  paymentRef        String? // stripe payment intent / session id
+  providerOrderRef  String? // esimcard order/sim ref
+  failureReason     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+// Key-value app settings (markup overrides, low-balance threshold, etc.)
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// Processed Stripe webhook event ids — for idempotency (ignore replays).
+model WebhookEvent {
+  id        String   @id // stripe event id (evt_...)
+  type      String
+  createdAt DateTime @default(now())
+}
