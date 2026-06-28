@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { AuthGate } from '@/components/AuthGate';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useApi } from '@/lib/use-api';
+import { apiFetch } from '@/lib/client-api';
 
 interface Order {
   id: string;
@@ -29,6 +30,16 @@ function OrderDetail() {
   const { id } = useParams<{ id: string }>();
   const { data, loading, reload } = useApi<{ order: Order }>(`/api/checkout/${id}`);
   const order = data?.order;
+
+  // On return from Stripe, confirm the payment and fulfill (once).
+  const confirmed = useRef(false);
+  useEffect(() => {
+    if (confirmed.current) return;
+    confirmed.current = true;
+    apiFetch(`/api/checkout/${id}/confirm`, { method: 'POST' })
+      .catch(() => {})
+      .finally(reload);
+  }, [id, reload]);
 
   // Poll while payment is still settling / the eSIM is being provisioned.
   // (After a Stripe redirect the status can briefly be "pending" until the

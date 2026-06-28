@@ -4,7 +4,7 @@ import { asyncHandler } from '../middleware/error.js';
 import { requireAuth } from '../middleware/auth.js';
 import { prisma } from '../lib/db.js';
 import { createOrderForPackage, markPaidAndFulfill } from '../orders/service.js';
-import { createCheckoutSession } from '../payments/stripe.js';
+import { createCheckoutSession, stripe } from '../payments/stripe.js';
 import { stripeEnabled, env } from '../env.js';
 
 export const checkoutRouter = Router();
@@ -29,6 +29,8 @@ checkoutRouter.post(
         successUrl: `${env.WEB_URL}/account/orders/${order.id}?paid=1`,
         cancelUrl: `${env.WEB_URL}/plans/${pkg.id}`,
       });
+      // Remember the session so we can confirm payment without relying on a webhook.
+      await prisma.order.update({ where: { id: order.id }, data: { paymentRef: session.id } });
       return res.json({ ok: true, orderId: order.id, mode: 'stripe', checkoutUrl: session.url });
     }
 
@@ -58,6 +60,39 @@ checkoutRouter.post(
       ? await prisma.esim.findUnique({ where: { id: result.esimId } })
       : null;
     res.json({ ok: true, order: result, esim });
+  }),
+);
+
+// POST /api/checkout/:id/confirm — verify the Stripe payment and fulfill.
+// Webhook-free path (works in local dev); idempotent with the webhook.
+checkoutRouter.post(
+  '/:id/confirm',
+  asyncHandler(async (req, res) => {
+    const order = await prisma.order.findUnique({
+      where: { id: req.params.id },
+      include: { esim: true },
+    });
+    if (!order || order.userId !== req.userId) {
+      return res.status(404).json({ ok: false, error: 'Order not found' });
+    }
+    if (order.status === 'completed') return res.json({ ok: true, order });
+
+    // Only Stripe-session orders can be confirmed this way.
+    if (!stripe || !order.paymentRef?.startsWith('cs_')) {
+      return res.json({ ok: true, order, pending: order.status !== 'completed' });
+    }
+
+    const session = await stripe.checkout.sessions.retrieve(order.paymentRef);
+    if (session.payment_status !== 'paid') {
+      return res.json({ ok: true, order, pending: true });
+    }
+
+    await markPaidAndFulfill(order.id, (session.payment_intent as string) ?? order.paymentRef);
+    const updated = await prisma.order.findUnique({
+      where: { id: order.id },
+      include: { esim: true },
+    });
+    res.json({ ok: true, order: updated });
   }),
 );
 

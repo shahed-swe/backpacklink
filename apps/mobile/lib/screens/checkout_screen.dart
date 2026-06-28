@@ -6,6 +6,7 @@ import '../core/theme.dart';
 import '../data/models.dart';
 import '../state/app_state.dart';
 import 'esim_detail_screen.dart';
+import 'order_status_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final Package pkg;
@@ -27,8 +28,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     try {
       final result = await account.checkout(widget.pkg.id);
       if (result.checkoutUrl != null) {
+        // Stripe: open hosted checkout, then track the order on return.
         await launchUrl(Uri.parse(result.checkoutUrl!), mode: LaunchMode.externalApplication);
-        if (mounted) Navigator.pop(context);
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => OrderStatusScreen(orderId: result.orderId)),
+          );
+        }
         return;
       }
       final order = await account.orderStatus(result.orderId);

@@ -2,7 +2,8 @@
     <application
         android:label="backpacklink"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true"><!-- dev only: allows plain http to the local backend; use https in production -->
         <activity
             android:name=".MainActivity"
             android:exported="true"

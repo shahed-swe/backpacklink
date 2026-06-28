@@ -94,4 +94,10 @@ class AccountService {
     final res = await _api.get('/api/checkout/$orderId');
     return OrderRow.fromJson(res['order']);
   }
+
+  /// Verify the Stripe payment and fulfill (webhook-free). Idempotent.
+  Future<OrderRow> confirm(String orderId) async {
+    final res = await _api.post('/api/checkout/$orderId/confirm');
+    return OrderRow.fromJson(res['order']);
+  }
 }
