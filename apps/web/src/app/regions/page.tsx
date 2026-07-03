@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { api, slugify } from '@/lib/api';
 
-export const revalidate = 1800;
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Regional eSIM plans — multi-country data',

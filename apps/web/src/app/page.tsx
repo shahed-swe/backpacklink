@@ -3,7 +3,9 @@ import { api, slugify } from '@/lib/api';
 import { CountryCard } from '@/components/CountryCard';
 import { HeroSearch } from '@/components/HeroSearch';
 
-export const revalidate = 1800;
+// Render at request time so live catalog data always shows (avoids an empty
+// build-time prerender when the API isn't reachable during `next build`).
+export const dynamic = 'force-dynamic';
 
 const POPULAR = [
   'United States', 'United Kingdom', 'Japan', 'Thailand', 'France', 'Turkey',

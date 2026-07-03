@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { api } from '@/lib/api';
 import { CountrySearch } from '@/components/CountrySearch';
 
-export const revalidate = 1800;
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'All eSIM destinations — 200+ countries',
