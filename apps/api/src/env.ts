@@ -61,6 +61,7 @@ export const env = {
   WEB_URL: str('WEB_URL', 'http://localhost:3000'),
 };
 
-export const stripeEnabled = () => env.STRIPE_SECRET_KEY.startsWith('sk_');
+// Accept standard secret keys (sk_) and restricted keys (rk_), test or live.
+export const stripeEnabled = () => /^(sk|rk)_/.test(env.STRIPE_SECRET_KEY);
 
 export type Env = typeof env;
