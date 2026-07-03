@@ -4,9 +4,9 @@ import { AccountNav } from './AccountNav';
 
 const nav = [
   { href: '/destinations', label: 'Destinations' },
-  { href: '/regions', label: 'Regions' },
-  { href: '/global', label: 'Global' },
-  { href: '/how-it-works', label: 'How it works' },
+  { href: '/coverage', label: 'Coverage' },
+  { href: '/community', label: 'Community' },
+  { href: '/help', label: 'Help' },
 ];
 
 export function Header() {

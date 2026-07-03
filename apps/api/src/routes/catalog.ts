@@ -72,3 +72,12 @@ catalogRouter.get(
     res.json({ ok: true, data: pkg });
   }),
 );
+
+// GET /api/catalog/coverage/:id   ("will it work here?" — networks + speeds)
+catalogRouter.get(
+  '/coverage/:id',
+  asyncHandler(async (req, res) => {
+    const data = await catalog.countryCoverage(req.params.id);
+    res.json({ ok: true, ...data });
+  }),
+);

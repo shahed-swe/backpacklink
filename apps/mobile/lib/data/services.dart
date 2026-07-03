@@ -56,6 +56,41 @@ class CatalogService {
     final res = await _api.get('/api/catalog/packages/$id');
     return Package.fromJson(res['data']);
   }
+
+  Future<List<CoverageNet>> countryCoverage(int id) async {
+    final res = await _api.get('/api/catalog/coverage/$id');
+    return (res['networks'] as List).map((e) => CoverageNet.fromJson(e)).toList();
+  }
+}
+
+/// Support chat (history via REST; realtime via socket in the screen).
+class SupportService {
+  final ApiClient _api;
+  SupportService(this._api);
+
+  Future<List<SupportMsg>> history() async {
+    final res = await _api.get('/api/support/thread');
+    return (res['messages'] as List).map((e) => SupportMsg.fromJson(e)).toList();
+  }
+}
+
+/// Community tips.
+class CommunityService {
+  final ApiClient _api;
+  CommunityService(this._api);
+
+  Future<List<Tip>> tips() async {
+    final res = await _api.get('/api/community/tips');
+    return (res['data'] as List).map((e) => Tip.fromJson(e)).toList();
+  }
+
+  Future<void> post(String country, String body) async {
+    await _api.post('/api/community/tips', {'country': country, 'body': body});
+  }
+
+  Future<void> like(String id) async {
+    await _api.post('/api/community/tips/$id/like');
+  }
 }
 
 /// Customer account: eSIMs, usage, orders, checkout.

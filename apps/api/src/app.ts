@@ -10,6 +10,8 @@ import { checkoutRouter } from './routes/checkout.js';
 import { meRouter } from './routes/me.js';
 import { webhookRouter } from './routes/webhooks.js';
 import { adminRouter } from './routes/admin.js';
+import { supportRouter } from './routes/support.js';
+import { communityRouter } from './routes/community.js';
 import { rateLimit } from './middleware/rateLimit.js';
 import { errorHandler, notFound } from './middleware/error.js';
 
@@ -34,6 +36,8 @@ export function createApp() {
   app.use('/api/auth', rateLimit({ windowMs: 60_000, max: 20 }), authRouter);
   app.use('/api/checkout', rateLimit({ windowMs: 60_000, max: 30 }), checkoutRouter);
   app.use('/api/me', meRouter);
+  app.use('/api/support', supportRouter);
+  app.use('/api/community', communityRouter);
   app.use('/api/admin', adminRouter);
 
   app.get('/', (_req, res) => {

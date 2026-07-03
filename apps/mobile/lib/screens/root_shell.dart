@@ -4,9 +4,10 @@ import '../core/theme.dart';
 import '../state/app_state.dart';
 import 'home_screen.dart';
 import 'my_esims_screen.dart';
+import 'community_screen.dart';
 import 'account_screen.dart';
 
-/// Bottom-nav shell: Explore · My eSIMs · Account.
+/// Bottom-nav shell: Explore · My eSIMs · Community · Account.
 class RootShell extends StatefulWidget {
   const RootShell({super.key});
   @override
@@ -26,7 +27,7 @@ class _RootShellState extends State<RootShell> {
       );
     }
 
-    const tabs = [HomeScreen(), MyEsimsScreen(), AccountScreen()];
+    const tabs = [HomeScreen(), MyEsimsScreen(), CommunityScreen(), AccountScreen()];
 
     return Scaffold(
       body: IndexedStack(index: _index, children: tabs),
@@ -36,6 +37,7 @@ class _RootShellState extends State<RootShell> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.explore_outlined), selectedIcon: Icon(Icons.explore), label: 'Explore'),
           NavigationDestination(icon: Icon(Icons.sim_card_outlined), selectedIcon: Icon(Icons.sim_card), label: 'My eSIMs'),
+          NavigationDestination(icon: Icon(Icons.groups_outlined), selectedIcon: Icon(Icons.groups), label: 'Community'),
           NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Account'),
         ],
       ),

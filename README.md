@@ -70,16 +70,21 @@ flutter run --dart-define=API_URL=http://10.0.2.2:4000   # Android emulator -> h
 
 ---
 
-## Run with Docker (backend + admin panel)
+## Run with Docker (backend + website + admin panel)
 
-The backend and admin panel are containerized. From the repo root (with your `.env` filled in):
+The backend, customer website, and admin panel are all containerized. From the repo root (with your `.env` filled in):
 
 ```bash
 docker compose up --build
 ```
 
+- **Website** → http://localhost:3000
 - **API** → http://localhost:4000
 - **Admin** → http://localhost:3001
+
+The website container renders server-side against the API over the internal docker
+network (`http://api:4000`), while the browser talks to the host-published
+`http://localhost:4000` (baked in at build via `NEXT_PUBLIC_API_URL`).
 
 On first boot the API container syncs the DB schema and **seeds an admin user** from
 `ADMIN_EMAIL` / `ADMIN_PASSWORD` (defaults `admin@backpacklink.local` / `changeme123` — change them):

@@ -217,3 +217,34 @@ class CheckoutResult {
   final String? checkoutUrl;
   CheckoutResult(this.orderId, this.checkoutUrl);
 }
+
+class SupportMsg {
+  final String id, senderRole, body;
+  SupportMsg({required this.id, required this.senderRole, required this.body});
+  factory SupportMsg.fromJson(Map<String, dynamic> j) =>
+      SupportMsg(id: '${j['id']}', senderRole: '${j['senderRole']}', body: '${j['body']}');
+}
+
+class Tip {
+  final String id, country, body;
+  final int likes;
+  final String? authorName;
+  Tip({required this.id, required this.country, required this.body, required this.likes, this.authorName});
+  factory Tip.fromJson(Map<String, dynamic> j) => Tip(
+        id: '${j['id']}',
+        country: '${j['country']}',
+        body: '${j['body']}',
+        likes: _toInt(j['likes']),
+        authorName: (j['user'] is Map) ? j['user']['name'] : null,
+      );
+}
+
+class CoverageNet {
+  final String name;
+  final List<String> generations;
+  CoverageNet({required this.name, required this.generations});
+  factory CoverageNet.fromJson(Map<String, dynamic> j) => CoverageNet(
+        name: '${j['name']}',
+        generations: (j['generations'] as List? ?? []).map((e) => '$e').toList(),
+      );
+}

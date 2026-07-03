@@ -40,11 +40,11 @@ export async function fulfillOrder(orderId: string): Promise<Order> {
   });
   if (claim.count === 0) {
     const current = await prisma.order.findUnique({ where: { id: orderId } });
-    if (current?.status === 'completed') return current;
-    if (current?.status === 'fulfilling') {
-      throw new Error('Order is already being fulfilled');
-    }
-    throw new Error(`Order ${orderId} is not payable (status: ${current?.status})`);
+    if (!current) throw new Error(`Order ${orderId} not found`);
+    // Already done, or another worker is mid-purchase — return and let the
+    // caller poll. Crucially we do NOT start a second provider purchase.
+    if (current.status === 'completed' || current.status === 'fulfilling') return current;
+    throw new Error(`Order ${orderId} is not payable (status: ${current.status})`);
   }
 
   try {

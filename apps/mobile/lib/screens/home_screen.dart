@@ -6,6 +6,9 @@ import '../state/app_state.dart';
 import '../widgets/widgets.dart';
 import 'country_screen.dart';
 import 'region_screen.dart';
+import 'coverage_screen.dart';
+import 'global_screen.dart';
+import 'destinations_screen.dart';
 
 const _popular = [
   'Japan', 'Thailand', 'United States', 'Turkey',
@@ -75,6 +78,20 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+          sliver: SliverToBoxAdapter(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                onPressed: () =>
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CoverageScreen())),
+                icon: const Icon(Icons.public, size: 18),
+                label: const Text('Will it work here? Check coverage'),
+              ),
+            ),
+          ),
+        ),
         if (filtered.isNotEmpty)
           SliverPadding(
             padding: const EdgeInsets.all(16),
@@ -87,7 +104,22 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           )
         else ...[
-          _section(const SectionHeader('Popular', 'Top destinations')),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+            sliver: SliverToBoxAdapter(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Expanded(child: SectionHeader('Popular', 'Top destinations')),
+                  TextButton(
+                    onPressed: () => Navigator.push(
+                        context, MaterialPageRoute(builder: (_) => const DestinationsScreen())),
+                    child: const Text('See all'),
+                  ),
+                ],
+              ),
+            ),
+          ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             sliver: SliverGrid.builder(
@@ -104,13 +136,24 @@ class _HomeScreenState extends State<HomeScreen> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: continents.length,
+                itemCount: continents.length + 1,
                 separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (_, i) => ActionChip(
-                  label: Text('🧭 ${continents[i].name}'),
-                  onPressed: () => Navigator.push(
-                      context, MaterialPageRoute(builder: (_) => RegionScreen(continent: continents[i]))),
-                ),
+                itemBuilder: (_, i) {
+                  if (i == 0) {
+                    return ActionChip(
+                      backgroundColor: BpColors.coral,
+                      label: const Text('🌐 Global', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                      onPressed: () =>
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const GlobalScreen())),
+                    );
+                  }
+                  final c = continents[i - 1];
+                  return ActionChip(
+                    label: Text('🧭 ${c.name}'),
+                    onPressed: () =>
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => RegionScreen(continent: c))),
+                  );
+                },
               ),
             ),
           ),

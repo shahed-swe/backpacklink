@@ -21,8 +21,10 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  esims  Esim[]
-  orders Order[]
+  esims         Esim[]
+  orders        Order[]
+  supportThread SupportThread?
+  tips          Tip[]
 }
 
 // The critical customer <-> eSIM mapping. esimcard has no idea which customer
@@ -91,4 +93,48 @@ model WebhookEvent {
   id        String   @id // stripe event id (evt_...)
   type      String
   createdAt DateTime @default(now())
+}
+
+// --- Support chat (one thread per customer, real-time via socket.io) ---
+model SupportThread {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  status        String   @default("open") // open | closed
+  unreadByAdmin Int      @default(0)
+  unreadByUser  Int      @default(0)
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  messages SupportMessage[]
+
+  @@index([lastMessageAt])
+}
+
+model SupportMessage {
+  id         String        @id @default(cuid())
+  threadId   String
+  thread     SupportThread @relation(fields: [threadId], references: [id])
+  senderId   String
+  senderRole String // customer | admin
+  body       String
+  createdAt  DateTime      @default(now())
+
+  @@index([threadId])
+}
+
+// --- Community tips feed ("worked great in <country>") ---
+model Tip {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  country   String
+  body      String
+  photoUrl  String?
+  status    String   @default("approved") // approved | hidden
+  likes     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@index([country])
 }

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/formatters.dart';
+import '../core/theme.dart';
 import '../data/models.dart';
 import '../state/app_state.dart';
 import '../widgets/widgets.dart';
 import 'login_screen.dart';
+import 'support_screen.dart';
+import 'coverage_screen.dart';
+import 'troubleshooting_screen.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -53,6 +57,24 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
           ),
           const SizedBox(height: 20),
+          const SectionHeader('Help', 'Support & more'),
+          const SizedBox(height: 12),
+          _HelpTile(
+            icon: Icons.chat_bubble_outline,
+            label: 'Chat with support',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SupportScreen())),
+          ),
+          _HelpTile(
+            icon: Icons.public,
+            label: 'Will it work here? (coverage)',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CoverageScreen())),
+          ),
+          _HelpTile(
+            icon: Icons.help_outline,
+            label: 'Troubleshooting',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TroubleshootingScreen())),
+          ),
+          const SizedBox(height: 20),
           const SectionHeader('History', 'Your orders'),
           const SizedBox(height: 12),
           AsyncView<List<OrderRow>>(
@@ -75,6 +97,25 @@ class _AccountScreenState extends State<AccountScreen> {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HelpTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _HelpTile({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: Icon(icon, color: BpColors.brand),
+        title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        trailing: const Icon(Icons.chevron_right, color: BpColors.brand),
+        onTap: onTap,
       ),
     );
   }

@@ -75,4 +75,29 @@ export const catalog = {
       return res.data ? toPackage(res.data) : null;
     });
   },
+
+  // "Will it work here?" — aggregate the networks + speeds available in a
+  // country across its data plans.
+  async countryCoverage(
+    id: number | string,
+  ): Promise<{ networks: { name: string; generations: string[] }[] }> {
+    return getOrSet(`coverage:${id}`, TTL.packages, async () => {
+      const pkgs = await catalog.countryPackages(id, 'DATA-ONLY');
+      const byNetwork = new Map<string, Set<string>>();
+      for (const p of pkgs) {
+        for (const c of p.coverage) {
+          for (const n of c.networks) {
+            if (!byNetwork.has(n.name)) byNetwork.set(n.name, new Set());
+            for (const g of n.generations) byNetwork.get(n.name)!.add(g);
+          }
+        }
+      }
+      const order = ['2G', '3G', '4G', '5G'];
+      const networks = [...byNetwork.entries()].map(([name, gens]) => ({
+        name,
+        generations: order.filter((g) => gens.has(g)),
+      }));
+      return { networks };
+    });
+  },
 };

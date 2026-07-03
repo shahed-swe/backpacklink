@@ -8,6 +8,8 @@ import { env } from '../env.js';
 import { invalidate } from '../lib/cache.js';
 import { getMarkupPercent, setMarkupPercent } from '../catalog/pricing.js';
 import { setSetting } from '../lib/settings.js';
+import { listMessages, postMessage, markThreadRead } from '../support/service.js';
+import { emitToThread, emitToAdmins } from '../realtime/io.js';
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireAdmin);
@@ -132,5 +134,94 @@ adminRouter.post(
   asyncHandler(async (_req, res) => {
     invalidate();
     res.json({ ok: true, message: 'Catalog cache cleared.' });
+  }),
+);
+
+// --- Support inbox ---
+
+// GET /api/admin/support/threads — all conversations, newest activity first.
+adminRouter.get(
+  '/support/threads',
+  asyncHandler(async (_req, res) => {
+    const threads = await prisma.supportThread.findMany({
+      orderBy: { lastMessageAt: 'desc' },
+      take: 100,
+      include: {
+        user: { select: { email: true, name: true } },
+        messages: { orderBy: { createdAt: 'desc' }, take: 1 },
+      },
+    });
+    res.json({
+      ok: true,
+      data: threads.map((t) => ({
+        id: t.id,
+        user: t.user,
+        status: t.status,
+        unreadByAdmin: t.unreadByAdmin,
+        lastMessageAt: t.lastMessageAt,
+        lastMessage: t.messages[0]?.body ?? null,
+      })),
+    });
+  }),
+);
+
+// GET /api/admin/support/threads/:id — one conversation + full history.
+adminRouter.get(
+  '/support/threads/:id',
+  asyncHandler(async (req, res) => {
+    const thread = await prisma.supportThread.findUnique({
+      where: { id: req.params.id },
+      include: { user: { select: { email: true, name: true } } },
+    });
+    if (!thread) return res.status(404).json({ ok: false, error: 'Thread not found' });
+    const messages = await listMessages(thread.id);
+    await markThreadRead(thread.id, 'admin');
+    res.json({ ok: true, thread, messages });
+  }),
+);
+
+// POST /api/admin/support/threads/:id/reply — reply as admin.
+const replySchema = z.object({ body: z.string().min(1).max(2000) });
+adminRouter.post(
+  '/support/threads/:id/reply',
+  asyncHandler(async (req, res) => {
+    const { body } = replySchema.parse(req.body);
+    const thread = await prisma.supportThread.findUnique({ where: { id: req.params.id } });
+    if (!thread) return res.status(404).json({ ok: false, error: 'Thread not found' });
+    const msg = await postMessage({
+      threadId: thread.id,
+      senderId: req.userId!,
+      senderRole: 'admin',
+      body,
+    });
+    emitToThread(thread.id, 'support:message', msg);
+    emitToAdmins('support:thread-updated', { threadId: thread.id });
+    res.status(201).json({ ok: true, message: msg });
+  }),
+);
+
+// --- Community moderation ---
+
+// GET /api/admin/tips — all tips (including hidden).
+adminRouter.get(
+  '/tips',
+  asyncHandler(async (_req, res) => {
+    const tips = await prisma.tip.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      include: { user: { select: { email: true, name: true } } },
+    });
+    res.json({ ok: true, data: tips });
+  }),
+);
+
+// POST /api/admin/tips/:id/status — approve or hide a tip.
+const tipStatusSchema = z.object({ status: z.enum(['approved', 'hidden']) });
+adminRouter.post(
+  '/tips/:id/status',
+  asyncHandler(async (req, res) => {
+    const { status } = tipStatusSchema.parse(req.body);
+    const tip = await prisma.tip.update({ where: { id: req.params.id }, data: { status } });
+    res.json({ ok: true, tip });
   }),
 );

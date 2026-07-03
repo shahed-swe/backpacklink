@@ -1,8 +1,10 @@
+import http from 'node:http';
 import { createApp } from './app.js';
 import { env } from './env.js';
 import { logger } from './lib/logger.js';
 import { getSetting } from './lib/settings.js';
 import { setMarkupPercent } from './catalog/pricing.js';
+import { initSocket } from './realtime/socket.js';
 
 // Last-resort safety net: log instead of letting the process die silently.
 process.on('unhandledRejection', (reason) => {
@@ -22,7 +24,10 @@ async function bootstrap() {
   }
 
   const app = createApp();
-  app.listen(env.PORT, () => {
+  const httpServer = http.createServer(app);
+  initSocket(httpServer); // attach socket.io for live support chat
+
+  httpServer.listen(env.PORT, () => {
     logger.info(`BackpackLink API listening on http://localhost:${env.PORT}`, {
       env: env.NODE_ENV,
       markup: `${env.MARKUP_PERCENT}%`,

@@ -11,11 +11,14 @@ class AppState extends ChangeNotifier {
   late final AuthService auth = AuthService(_api);
   late final CatalogService catalog = CatalogService(_api);
   late final AccountService account = AccountService(_api);
+  late final SupportService support = SupportService(_api);
+  late final CommunityService community = CommunityService(_api);
 
   AppUser? user;
   bool ready = false;
 
   bool get isLoggedIn => user != null;
+  String? get authToken => _api.token;
 
   Future<void> init() async {
     _api.onUnauthorized = () {

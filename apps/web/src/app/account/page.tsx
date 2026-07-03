@@ -44,9 +44,14 @@ function Dashboard() {
             Hi {user?.name?.split(' ')[0] ?? 'traveler'} 👋
           </h1>
         </div>
-        <button onClick={logout} className="btn-ghost">
-          Sign out
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/support" className="btn-primary px-5 py-2.5">
+            💬 Support
+          </Link>
+          <button onClick={logout} className="btn-ghost">
+            Sign out
+          </button>
+        </div>
       </div>
 
       {/* profile */}
