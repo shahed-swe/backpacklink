@@ -23,7 +23,7 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@backpacklink.local}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme123}
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000" # localhost only; public access is via nginx
     volumes:
       - bpl-data:/data
     restart: unless-stopped
@@ -42,7 +42,7 @@ services:
       API_URL: http://api:4000
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       - api
     restart: unless-stopped
@@ -56,10 +56,40 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
     container_name: bpl-admin
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"
     depends_on:
       - api
     restart: unless-stopped
 
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: bpl-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/app.conf:/etc/nginx/conf.d/default.conf:ro
+      - certbot-conf:/etc/letsencrypt:ro
+      - certbot-www:/var/www/certbot:ro
+    # Reload every 6h so renewed certs are picked up automatically.
+    command: ["/bin/sh", "-c", "while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g 'daemon off;'"]
+    depends_on:
+      - web
+      - api
+      - admin
+    restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot
+    container_name: bpl-certbot
+    volumes:
+      - certbot-conf:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    # Renew loop (initial issuance is done by deploy/init-letsencrypt.sh).
+    entrypoint: ["/bin/sh", "-c", "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h & wait $${!}; done"]
+    restart: unless-stopped
+
 volumes:
   bpl-data:
+  certbot-conf:
+  certbot-www:
