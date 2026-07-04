@@ -1,4 +1,4 @@
-package com.backpacklink.backpacklink
+package com.backpacklink.app
 
 import io.flutter.embedding.android.FlutterActivity
 

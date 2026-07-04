@@ -3,6 +3,15 @@
 .env.*
 !.env.example
 
+# Signing assets (iOS/Android) — never commit
+*.cer
+*.certSigningRequest
+*.p12
+*.p8
+*.mobileprovision
+*.keystore
+*.jks
+
 # Node
 node_modules/
 npm-debug.log*
