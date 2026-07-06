@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { AuthGate } from '@/components/AuthGate';
 import { useApi } from '@/lib/use-api';
 import { apiFetch } from '@/lib/client-api';
+import { getAttribution } from '@/lib/attribution';
 
 interface Pkg {
   id: string;
@@ -80,7 +81,11 @@ function Checkout() {
         '/api/checkout',
         {
           method: 'POST',
-          body: { packageId: id, couponCode: coupon?.valid ? couponInput.trim() : undefined },
+          body: {
+            packageId: id,
+            couponCode: coupon?.valid ? couponInput.trim() : undefined,
+            ...getAttribution(),
+          },
         },
       );
       if (res.mode === 'stripe' && res.checkoutUrl) {

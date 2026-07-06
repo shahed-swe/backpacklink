@@ -31,11 +31,12 @@ interface Form {
   active: boolean;
   startsAt: string;
   endsAt: string;
+  influencerId: string;
 }
 
 const emptyForm: Form = {
   code: '', description: '', discountType: 'percent', discountValue: '', minSubtotal: '',
-  maxRedemptions: '', perUserLimit: '1', active: true, startsAt: '', endsAt: '',
+  maxRedemptions: '', perUserLimit: '1', active: true, startsAt: '', endsAt: '', influencerId: '',
 };
 
 function toLocalInput(iso: string | null): string {
@@ -47,6 +48,7 @@ function toLocalInput(iso: string | null): string {
 
 export default function Coupons() {
   const { data, loading, reload } = useApi<{ data: Coupon[] }>('/api/admin/coupons');
+  const { data: infData } = useApi<{ data: { id: string; name: string; refCode: string }[] }>('/api/admin/influencers');
   const [form, setForm] = useState<Form>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -63,6 +65,7 @@ export default function Coupons() {
       maxRedemptions: c.maxRedemptions == null ? '' : String(c.maxRedemptions),
       perUserLimit: c.perUserLimit == null ? '' : String(c.perUserLimit),
       active: c.active, startsAt: toLocalInput(c.startsAt), endsAt: toLocalInput(c.endsAt),
+      influencerId: c.influencer?.id ?? '',
     });
     setMsg(null);
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -87,6 +90,7 @@ export default function Coupons() {
       active: form.active,
       startsAt: form.startsAt || null,
       endsAt: form.endsAt || null,
+      influencerId: form.influencerId || null,
     };
     try {
       if (editingId) await apiFetch(`/api/admin/coupons/${editingId}`, { method: 'PATCH', body });
@@ -136,6 +140,21 @@ export default function Coupons() {
           <Text label="Min order (blank = none)" value={form.minSubtotal} onChange={(v) => set('minSubtotal', v)} type="number" />
           <Text label="Max total uses (blank = ∞)" value={form.maxRedemptions} onChange={(v) => set('maxRedemptions', v)} type="number" />
           <Text label="Uses per customer (blank = ∞)" value={form.perUserLimit} onChange={(v) => set('perUserLimit', v)} type="number" />
+          <label className="block">
+            <span className="text-sm font-semibold text-ink/70">Link to influencer (optional)</span>
+            <select
+              value={form.influencerId}
+              onChange={(e) => set('influencerId', e.target.value)}
+              className="mt-1 w-full rounded-xl border border-brand-200 bg-white px-4 py-2.5 outline-none focus:border-brand-500"
+            >
+              <option value="">None</option>
+              {(infData?.data ?? []).map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.name} ({i.refCode})
+                </option>
+              ))}
+            </select>
+          </label>
           <Text label="Description (internal)" value={form.description} onChange={(v) => set('description', v)} full />
           <Text label="Starts at (optional)" value={form.startsAt} onChange={(v) => set('startsAt', v)} type="datetime-local" />
           <Text label="Ends at (optional)" value={form.endsAt} onChange={(v) => set('endsAt', v)} type="datetime-local" />

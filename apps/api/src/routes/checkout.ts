@@ -4,6 +4,7 @@ import { asyncHandler } from '../middleware/error.js';
 import { requireAuth } from '../middleware/auth.js';
 import { prisma } from '../lib/db.js';
 import { createOrderForPackage, markPaidAndFulfill } from '../orders/service.js';
+import { resolveInfluencerIdByRef } from '../influencers/service.js';
 import { createCheckoutSession, stripe } from '../payments/stripe.js';
 import { stripeEnabled, env } from '../env.js';
 
@@ -13,14 +14,28 @@ checkoutRouter.use(requireAuth);
 const schema = z.object({
   packageId: z.string().min(1),
   couponCode: z.string().max(80).optional(),
+  // Attribution captured on the storefront (ref link + UTM + referrer).
+  ref: z.string().max(80).optional(),
+  source: z.string().max(120).optional(),
+  medium: z.string().max(120).optional(),
+  campaign: z.string().max(120).optional(),
+  referrer: z.string().max(300).optional(),
 });
 
 // POST /api/checkout — create an order and start payment.
 checkoutRouter.post(
   '/',
   asyncHandler(async (req, res) => {
-    const { packageId, couponCode } = schema.parse(req.body);
-    const { order, pkg } = await createOrderForPackage(req.userId!, packageId, { couponCode });
+    const { packageId, couponCode, ref, source, medium, campaign, referrer } = schema.parse(req.body);
+    const influencerId = await resolveInfluencerIdByRef(ref);
+    const { order, pkg } = await createOrderForPackage(req.userId!, packageId, {
+      couponCode,
+      influencerId,
+      source,
+      medium,
+      campaign,
+      referrer,
+    });
 
     if (stripeEnabled()) {
       const session = await createCheckoutSession({

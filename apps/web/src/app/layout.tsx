@@ -4,6 +4,7 @@ import './globals.css';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { PromoBar } from '@/components/PromoBar';
+import { AttributionCapture } from '@/components/AttributionCapture';
 import { AuthProvider } from '@/lib/auth';
 import { api } from '@/lib/api';
 
@@ -37,6 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en" className={`${sans.variable} ${display.variable}`}>
       <body className="min-h-screen font-sans">
         <AuthProvider>
+          <AttributionCapture />
           {bar && <PromoBar promo={bar} />}
           <Header />
           <main>{children}</main>

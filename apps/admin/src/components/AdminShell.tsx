@@ -11,6 +11,8 @@ const nav = [
   { href: '/customers', label: 'Customers', icon: '👤' },
   { href: '/campaigns', label: 'Campaigns', icon: '📣' },
   { href: '/coupons', label: 'Coupons', icon: '🏷️' },
+  { href: '/influencers', label: 'Influencers', icon: '⭐' },
+  { href: '/sources', label: 'Traffic Sources', icon: '📈' },
   { href: '/support', label: 'Support', icon: '💬' },
   { href: '/tips', label: 'Community', icon: '🌍' },
   { href: '/settings', label: 'Pricing & Settings', icon: '⚙️' },

@@ -1,6 +1,8 @@
 import { Router } from 'express';
+import type { Request } from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../middleware/error.js';
+import { generateRefCode, normalizeRef, commissionOwed } from '../influencers/service.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { prisma } from '../lib/db.js';
 import { esimcard } from '../esimcard/service.js';
@@ -379,5 +381,160 @@ adminRouter.delete(
   asyncHandler(async (req, res) => {
     await prisma.coupon.delete({ where: { id: req.params.id } });
     res.json({ ok: true });
+  }),
+);
+
+// --- Influencers / affiliates ---
+
+const influencerInput = z.object({
+  name: z.string().min(1).max(120),
+  handle: z.string().max(80).nullish(),
+  platform: z.string().max(40).nullish(),
+  email: z.string().max(200).nullish(),
+  refCode: z.string().max(80).nullish(),
+  commissionType: z.enum(['percent', 'fixed']).nullish(),
+  commissionValue: numLike.nullish(),
+  active: z.boolean().default(true),
+});
+
+function toInfluencerData(input: Record<string, unknown>): Record<string, unknown> {
+  const d: Record<string, unknown> = { ...input };
+  for (const k of ['handle', 'platform', 'email']) if (k in d && d[k] === '') d[k] = null;
+  if ('refCode' in d) {
+    if (typeof d.refCode === 'string' && d.refCode.trim()) d.refCode = normalizeRef(d.refCode);
+    else delete d.refCode; // let the caller generate one
+  }
+  if ('commissionType' in d && (d.commissionType === '' || d.commissionType == null)) d.commissionType = null;
+  if ('commissionValue' in d) d.commissionValue = numOrNull(d.commissionValue);
+  return d;
+}
+
+// GET /api/admin/influencers — roster with coupon counts.
+adminRouter.get(
+  '/influencers',
+  asyncHandler(async (_req, res) => {
+    const influencers = await prisma.influencer.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { _count: { select: { coupons: true, orders: true } } },
+    });
+    res.json({ ok: true, data: influencers });
+  }),
+);
+
+// POST /api/admin/influencers — create (auto-generates a refCode if omitted).
+adminRouter.post(
+  '/influencers',
+  asyncHandler(async (req, res) => {
+    const input = influencerInput.parse(req.body);
+    const data = toInfluencerData(input);
+    if (!data.refCode) data.refCode = generateRefCode(input.name);
+    const influencer = await prisma.influencer.create({ data: data as never });
+    res.status(201).json({ ok: true, data: influencer });
+  }),
+);
+
+// PATCH /api/admin/influencers/:id
+adminRouter.patch(
+  '/influencers/:id',
+  asyncHandler(async (req, res) => {
+    const input = influencerInput.partial().parse(req.body);
+    const influencer = await prisma.influencer.update({
+      where: { id: req.params.id },
+      data: toInfluencerData(input) as never,
+    });
+    res.json({ ok: true, data: influencer });
+  }),
+);
+
+// DELETE /api/admin/influencers/:id — detach references first so it always succeeds.
+adminRouter.delete(
+  '/influencers/:id',
+  asyncHandler(async (req, res) => {
+    const id = req.params.id;
+    await prisma.$transaction([
+      prisma.order.updateMany({ where: { influencerId: id }, data: { influencerId: null } }),
+      prisma.coupon.updateMany({ where: { influencerId: id }, data: { influencerId: null } }),
+      prisma.influencer.delete({ where: { id } }),
+    ]);
+    res.json({ ok: true });
+  }),
+);
+
+// --- Sales attribution reports ---
+
+function dateRange(req: Request) {
+  const parse = (v: unknown) => (typeof v === 'string' ? new Date(v) : null);
+  const from = parse(req.query.from);
+  const to = parse(req.query.to);
+  const createdAt: { gte?: Date; lte?: Date } = {};
+  if (from && !Number.isNaN(from.getTime())) createdAt.gte = from;
+  if (to && !Number.isNaN(to.getTime())) createdAt.lte = to;
+  return Object.keys(createdAt).length ? { createdAt } : {};
+}
+
+// GET /api/admin/reports/influencers — completed sales attributed per influencer.
+adminRouter.get(
+  '/reports/influencers',
+  asyncHandler(async (req, res) => {
+    const range = dateRange(req);
+    const [influencers, grouped] = await Promise.all([
+      prisma.influencer.findMany(),
+      prisma.order.groupBy({
+        by: ['influencerId'],
+        where: { status: 'completed', influencerId: { not: null }, ...range },
+        _count: { _all: true },
+        _sum: { retailPrice: true, wholesalePrice: true, discountAmount: true },
+      }),
+    ]);
+    const byId = new Map(grouped.map((g) => [g.influencerId, g]));
+    const rows = influencers
+      .map((inf) => {
+        const g = byId.get(inf.id);
+        const orders = g?._count._all ?? 0;
+        const revenue = round(g?._sum.retailPrice ?? 0);
+        const cost = round(g?._sum.wholesalePrice ?? 0);
+        return {
+          id: inf.id,
+          name: inf.name,
+          handle: inf.handle,
+          platform: inf.platform,
+          refCode: inf.refCode,
+          active: inf.active,
+          orders,
+          revenue,
+          profit: round(revenue - cost),
+          discount: round(g?._sum.discountAmount ?? 0),
+          commission: commissionOwed(inf, revenue, orders),
+        };
+      })
+      .sort((a, b) => b.revenue - a.revenue);
+    res.json({ ok: true, data: rows, currency: env.DISPLAY_CURRENCY });
+  }),
+);
+
+// GET /api/admin/reports/sources — completed sales per traffic source.
+adminRouter.get(
+  '/reports/sources',
+  asyncHandler(async (req, res) => {
+    const range = dateRange(req);
+    const grouped = await prisma.order.groupBy({
+      by: ['source'],
+      where: { status: 'completed', ...range },
+      _count: { _all: true },
+      _sum: { retailPrice: true, wholesalePrice: true },
+    });
+    const rows = grouped
+      .map((g) => {
+        const revenue = round(g._sum.retailPrice ?? 0);
+        const cost = round(g._sum.wholesalePrice ?? 0);
+        return {
+          source: g.source ?? 'direct',
+          orders: g._count._all,
+          revenue,
+          profit: round(revenue - cost),
+        };
+      })
+      .sort((a, b) => b.revenue - a.revenue);
+    res.json({ ok: true, data: rows, currency: env.DISPLAY_CURRENCY });
   }),
 );
