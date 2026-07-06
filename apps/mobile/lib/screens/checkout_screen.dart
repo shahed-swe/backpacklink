@@ -19,6 +19,41 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _busy = false;
   String? _error;
 
+  final _couponController = TextEditingController();
+  CouponResult? _coupon;
+  bool _applyingCoupon = false;
+
+  bool get _discounted => _coupon?.valid == true;
+  double get _price => _discounted ? _coupon!.finalPrice : widget.pkg.retail;
+
+  @override
+  void dispose() {
+    _couponController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _applyCoupon() async {
+    final code = _couponController.text.trim();
+    if (code.isEmpty) return;
+    setState(() {
+      _applyingCoupon = true;
+      _error = null;
+    });
+    try {
+      final account = context.read<AppState>().account;
+      final result = await account.validateCoupon(code, widget.pkg.id);
+      setState(() {
+        _coupon = result;
+        _applyingCoupon = false;
+      });
+    } catch (e) {
+      setState(() {
+        _coupon = CouponResult(valid: false, reason: '$e', discountAmount: 0, finalPrice: widget.pkg.retail);
+        _applyingCoupon = false;
+      });
+    }
+  }
+
   Future<void> _pay() async {
     setState(() {
       _busy = true;
@@ -26,7 +61,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
     final account = context.read<AppState>().account;
     try {
-      final result = await account.checkout(widget.pkg.id);
+      final result = await account.checkout(
+        widget.pkg.id,
+        couponCode: _discounted ? _couponController.text.trim() : null,
+      );
       if (result.checkoutUrl != null) {
         // Stripe: open hosted checkout, then track the order on return.
         await launchUrl(Uri.parse(result.checkoutUrl!), mode: LaunchMode.externalApplication);
@@ -81,10 +119,61 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ]),
                   ),
                   Text(money(pkg.retail, pkg.currency),
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        decoration: _discounted ? TextDecoration.lineThrough : null,
+                        color: _discounted ? BpColors.inkFade(0.4) : null,
+                      )),
                 ]),
               ),
             ),
+            const SizedBox(height: 12),
+            // Coupon
+            if (_discounted)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(color: BpColors.brandBg, borderRadius: BorderRadius.circular(14)),
+                child: Row(children: [
+                  Expanded(
+                    child: Text('Coupon applied — save ${money(_coupon!.discountAmount, pkg.currency)}',
+                        style: const TextStyle(color: BpColors.brand, fontWeight: FontWeight.w700)),
+                  ),
+                  TextButton(
+                    onPressed: () => setState(() {
+                      _coupon = null;
+                      _couponController.clear();
+                    }),
+                    child: const Text('Remove'),
+                  ),
+                ]),
+              )
+            else
+              Row(children: [
+                Expanded(
+                  child: TextField(
+                    controller: _couponController,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: const InputDecoration(hintText: 'Coupon code'),
+                    onSubmitted: (_) => _applyCoupon(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  onPressed: _applyingCoupon ? null : _applyCoupon,
+                  child: _applyingCoupon
+                      ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Apply'),
+                ),
+              ]),
+            if (_coupon != null && !_coupon!.valid && _coupon!.reason != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(_coupon!.reason!, style: const TextStyle(color: BpColors.coral, fontSize: 13)),
+                ),
+              ),
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.only(top: 16),
@@ -97,7 +186,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 onPressed: _busy ? null : _pay,
                 child: _busy
                     ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Text('Pay ${money(pkg.retail, pkg.currency)}'),
+                    : Text('Pay ${money(_price, pkg.currency)}'),
               ),
             ),
             const SizedBox(height: 8),

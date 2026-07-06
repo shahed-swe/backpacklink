@@ -75,6 +75,21 @@ class HomePromotions {
       );
 }
 
+/// Result of validating a coupon code against a package price.
+class CouponResult {
+  final bool valid;
+  final String? reason;
+  final double discountAmount;
+  final double finalPrice;
+  CouponResult({required this.valid, this.reason, required this.discountAmount, required this.finalPrice});
+  factory CouponResult.fromJson(Map<String, dynamic> j) => CouponResult(
+        valid: j['valid'] == true,
+        reason: j['reason'],
+        discountAmount: _toDouble(j['discountAmount']),
+        finalPrice: _toDouble(j['finalPrice']),
+      );
+}
+
 class Network {
   final String name;
   final List<String> generations;

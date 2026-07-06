@@ -128,12 +128,21 @@ class AccountService {
     return (res['data'] as List).map((e) => OrderRow.fromJson(e)).toList();
   }
 
-  Future<CheckoutResult> checkout(String packageId) async {
-    final res = await _api.post('/api/checkout', {'packageId': packageId});
+  Future<CheckoutResult> checkout(String packageId, {String? couponCode}) async {
+    final res = await _api.post('/api/checkout', {
+      'packageId': packageId,
+      if (couponCode != null && couponCode.isNotEmpty) 'couponCode': couponCode,
+    });
     final orderId = '${res['orderId']}';
     if (res['mode'] == 'stripe') return CheckoutResult(orderId, res['checkoutUrl']);
     await _api.post('/api/checkout/$orderId/simulate-pay');
     return CheckoutResult(orderId, null);
+  }
+
+  /// Preview a coupon discount for a package before paying.
+  Future<CouponResult> validateCoupon(String code, String packageId) async {
+    final res = await _api.post('/api/coupons/validate', {'code': code, 'packageId': packageId});
+    return CouponResult.fromJson(res['data'] as Map<String, dynamic>);
   }
 
   Future<OrderRow> orderStatus(String orderId) async {

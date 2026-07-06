@@ -8,6 +8,7 @@ import { catalogRouter } from './routes/catalog.js';
 import { promotionsRouter } from './routes/promotions.js';
 import { authRouter } from './routes/auth.js';
 import { checkoutRouter } from './routes/checkout.js';
+import { couponsRouter } from './routes/coupons.js';
 import { meRouter } from './routes/me.js';
 import { webhookRouter } from './routes/webhooks.js';
 import { adminRouter } from './routes/admin.js';
@@ -37,6 +38,7 @@ export function createApp() {
   app.use('/api/promotions', promotionsRouter);
   app.use('/api/auth', rateLimit({ windowMs: 60_000, max: 20 }), authRouter);
   app.use('/api/checkout', rateLimit({ windowMs: 60_000, max: 30 }), checkoutRouter);
+  app.use('/api/coupons', rateLimit({ windowMs: 60_000, max: 30 }), couponsRouter);
   app.use('/api/me', meRouter);
   app.use('/api/support', supportRouter);
   app.use('/api/community', communityRouter);

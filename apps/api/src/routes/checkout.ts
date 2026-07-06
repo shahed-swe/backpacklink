@@ -10,20 +10,23 @@ import { stripeEnabled, env } from '../env.js';
 export const checkoutRouter = Router();
 checkoutRouter.use(requireAuth);
 
-const schema = z.object({ packageId: z.string().min(1) });
+const schema = z.object({
+  packageId: z.string().min(1),
+  couponCode: z.string().max(80).optional(),
+});
 
 // POST /api/checkout — create an order and start payment.
 checkoutRouter.post(
   '/',
   asyncHandler(async (req, res) => {
-    const { packageId } = schema.parse(req.body);
-    const { order, pkg } = await createOrderForPackage(req.userId!, packageId);
+    const { packageId, couponCode } = schema.parse(req.body);
+    const { order, pkg } = await createOrderForPackage(req.userId!, packageId, { couponCode });
 
     if (stripeEnabled()) {
       const session = await createCheckoutSession({
         orderId: order.id,
         packageName: pkg.name,
-        amount: pkg.price.retail,
+        amount: order.retailPrice, // discounted price when a coupon applied
         currency: pkg.price.currency,
         customerEmail: req.userEmail!,
         successUrl: `${env.WEB_URL}/account/orders/${order.id}?paid=1`,

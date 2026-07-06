@@ -3,6 +3,7 @@ import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
 import { EsimcardError } from '../esimcard/client.js';
 import { AuthError } from '../auth/service.js';
+import { HttpError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 
 export function notFound(_req: Request, res: Response) {
@@ -19,6 +20,9 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
     });
   }
   if (err instanceof AuthError) {
+    return res.status(err.status).json({ ok: false, error: err.message });
+  }
+  if (err instanceof HttpError) {
     return res.status(err.status).json({ ok: false, error: err.message });
   }
   if (err instanceof Prisma.PrismaClientKnownRequestError) {

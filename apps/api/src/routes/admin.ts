@@ -301,3 +301,83 @@ adminRouter.delete(
     res.json({ ok: true });
   }),
 );
+
+// --- Coupons (discount codes, optionally tied to an influencer) ---
+
+const numLike = z.union([z.string(), z.number()]);
+const couponInput = z.object({
+  code: z.string().min(1).max(80),
+  description: z.string().max(300).nullish(),
+  discountType: z.enum(['percent', 'fixed']),
+  discountValue: numLike,
+  minSubtotal: numLike.nullish(),
+  maxRedemptions: numLike.nullish(),
+  perUserLimit: numLike.nullish(),
+  active: z.boolean().default(true),
+  startsAt: z.string().nullish(),
+  endsAt: z.string().nullish(),
+  influencerId: z.string().nullish(),
+});
+
+function numOrNull(v: unknown): number | null {
+  if (v === '' || v == null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+// Only transforms keys that are present, so PATCH stays a true partial update.
+function toCouponData(input: Record<string, unknown>): Record<string, unknown> {
+  const d: Record<string, unknown> = { ...input };
+  if ('code' in d && typeof d.code === 'string') d.code = d.code.trim().toUpperCase();
+  for (const k of ['description', 'influencerId']) if (k in d && d[k] === '') d[k] = null;
+  if ('discountValue' in d) d.discountValue = numOrNull(d.discountValue) ?? 0;
+  for (const k of ['minSubtotal', 'maxRedemptions', 'perUserLimit']) if (k in d) d[k] = numOrNull(d[k]);
+  for (const k of ['startsAt', 'endsAt']) {
+    if (k in d) d[k] = d[k] === '' || d[k] == null ? null : new Date(d[k] as string);
+  }
+  return d;
+}
+
+// GET /api/admin/coupons — all coupons with their linked influencer + usage.
+adminRouter.get(
+  '/coupons',
+  asyncHandler(async (_req, res) => {
+    const coupons = await prisma.coupon.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { influencer: { select: { id: true, name: true, refCode: true } } },
+    });
+    res.json({ ok: true, data: coupons });
+  }),
+);
+
+// POST /api/admin/coupons — create.
+adminRouter.post(
+  '/coupons',
+  asyncHandler(async (req, res) => {
+    const input = couponInput.parse(req.body);
+    const coupon = await prisma.coupon.create({ data: toCouponData(input) as never });
+    res.status(201).json({ ok: true, data: coupon });
+  }),
+);
+
+// PATCH /api/admin/coupons/:id — partial update.
+adminRouter.patch(
+  '/coupons/:id',
+  asyncHandler(async (req, res) => {
+    const input = couponInput.partial().parse(req.body);
+    const coupon = await prisma.coupon.update({
+      where: { id: req.params.id },
+      data: toCouponData(input) as never,
+    });
+    res.json({ ok: true, data: coupon });
+  }),
+);
+
+// DELETE /api/admin/coupons/:id
+adminRouter.delete(
+  '/coupons/:id',
+  asyncHandler(async (req, res) => {
+    await prisma.coupon.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  }),
+);
