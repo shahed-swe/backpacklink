@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 
 const nav = [
-  { href: '/', label: 'Overview', icon: '📊' },
+  { href: '/', label: 'Dashboard', icon: '📊' },
   { href: '/orders', label: 'Orders', icon: '🧾' },
   { href: '/customers', label: 'Customers', icon: '👤' },
   { href: '/campaigns', label: 'Campaigns', icon: '📣' },

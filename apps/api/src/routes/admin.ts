@@ -538,3 +538,90 @@ adminRouter.get(
     res.json({ ok: true, data: rows, currency: env.DISPLAY_CURRENCY });
   }),
 );
+
+// GET /api/admin/reports/sales — daily revenue/profit series + totals (default 30d).
+adminRouter.get(
+  '/reports/sales',
+  asyncHandler(async (req, res) => {
+    const range = dateRange(req);
+    const where = range.createdAt
+      ? { status: 'completed', ...range }
+      : { status: 'completed', createdAt: { gte: new Date(Date.now() - 30 * 86400000) } };
+    const orders = await prisma.order.findMany({
+      where,
+      select: { createdAt: true, retailPrice: true, wholesalePrice: true, discountAmount: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const buckets = new Map<string, { revenue: number; profit: number; orders: number }>();
+    let revenue = 0;
+    let cost = 0;
+    let discount = 0;
+    for (const o of orders) {
+      const day = o.createdAt.toISOString().slice(0, 10);
+      const b = buckets.get(day) ?? { revenue: 0, profit: 0, orders: 0 };
+      b.revenue += o.retailPrice;
+      b.profit += o.retailPrice - o.wholesalePrice;
+      b.orders += 1;
+      buckets.set(day, b);
+      revenue += o.retailPrice;
+      cost += o.wholesalePrice;
+      discount += o.discountAmount;
+    }
+    const series = [...buckets.entries()].map(([date, b]) => ({
+      date,
+      revenue: round(b.revenue),
+      profit: round(b.profit),
+      orders: b.orders,
+    }));
+
+    res.json({
+      ok: true,
+      data: {
+        series,
+        totals: {
+          revenue: round(revenue),
+          profit: round(revenue - cost),
+          discount: round(discount),
+          orders: orders.length,
+          avgOrder: orders.length ? round(revenue / orders.length) : 0,
+        },
+      },
+      currency: env.DISPLAY_CURRENCY,
+    });
+  }),
+);
+
+// GET /api/admin/reports/coupons — performance per coupon.
+adminRouter.get(
+  '/reports/coupons',
+  asyncHandler(async (req, res) => {
+    const range = dateRange(req);
+    const [coupons, grouped] = await Promise.all([
+      prisma.coupon.findMany(),
+      prisma.order.groupBy({
+        by: ['couponId'],
+        where: { status: 'completed', couponId: { not: null }, ...range },
+        _count: { _all: true },
+        _sum: { retailPrice: true, discountAmount: true },
+      }),
+    ]);
+    const byId = new Map(grouped.map((g) => [g.couponId, g]));
+    const rows = coupons
+      .map((c) => {
+        const g = byId.get(c.id);
+        return {
+          id: c.id,
+          code: c.code,
+          discountType: c.discountType,
+          discountValue: c.discountValue,
+          uses: g?._count._all ?? 0,
+          revenue: round(g?._sum.retailPrice ?? 0),
+          discountGiven: round(g?._sum.discountAmount ?? 0),
+          active: c.active,
+        };
+      })
+      .sort((a, b) => b.revenue - a.revenue);
+    res.json({ ok: true, data: rows, currency: env.DISPLAY_CURRENCY });
+  }),
+);
