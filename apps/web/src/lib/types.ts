@@ -59,3 +59,24 @@ export interface Continent {
   code: string | null;
   flag: string | null;
 }
+
+// Admin-managed campaign content (promo bar + banners). Fully event-driven.
+export interface Promotion {
+  id: string;
+  kind: 'bar' | 'banner';
+  title: string;
+  subtitle: string | null;
+  imageUrl: string | null;
+  bgColor: string | null;
+  textColor: string | null;
+  ctaLabel: string | null;
+  ctaUrl: string | null;
+  couponCode: string | null;
+  placement: 'web' | 'mobile' | 'both';
+  priority: number;
+}
+
+export interface Promotions {
+  bar: Promotion | null;
+  banners: Promotion[];
+}

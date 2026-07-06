@@ -74,11 +74,27 @@ model Order {
   paymentRef        String? // stripe payment intent / session id
   providerOrderRef  String? // esimcard order/sim ref
   failureReason     String?
+
+  // --- Discounts & attribution (growth features) ---
+  couponId       String?
+  coupon         Coupon?     @relation(fields: [couponId], references: [id])
+  couponCode     String? // snapshot of the code entered
+  discountAmount Float       @default(0) // amount taken off retail
+  influencerId   String?
+  influencer     Influencer? @relation(fields: [influencerId], references: [id])
+  source         String? // utm_source or referrer host or "direct"
+  medium         String? // utm_medium
+  campaign       String? // utm_campaign
+  referrer       String? // document.referrer host
+
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   @@index([userId])
   @@index([status])
+  @@index([couponId])
+  @@index([influencerId])
+  @@index([source])
 }
 
 // Key-value app settings (markup overrides, low-balance threshold, etc.)
@@ -137,4 +153,71 @@ model Tip {
 
   @@index([status])
   @@index([country])
+}
+
+// --- Growth: campaign bar + banners (fully admin-managed, event-driven) ---
+model Promotion {
+  id         String    @id @default(cuid())
+  kind       String // "bar" | "banner"
+  title      String
+  subtitle   String?
+  imageUrl   String?
+  bgColor    String? // optional hex override e.g. "#0bb7a8"
+  textColor  String? // optional hex override
+  ctaLabel   String?
+  ctaUrl     String?
+  couponCode String? // optional: this promo advertises a coupon
+  placement  String    @default("both") // "web" | "mobile" | "both"
+  priority   Int       @default(0) // higher shows first
+  active     Boolean   @default(true)
+  startsAt   DateTime? // null = no start bound
+  endsAt     DateTime? // null = no end bound
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([active])
+}
+
+// --- Growth: influencers / affiliates ---
+model Influencer {
+  id              String   @id @default(cuid())
+  name            String
+  handle          String? // @handle
+  platform        String? // instagram | youtube | tiktok | ...
+  email           String?
+  refCode         String   @unique // used in ?ref=CODE links and (optionally) as a coupon code
+  commissionType  String? // "percent" | "fixed" | null
+  commissionValue Float? // e.g. 10 => 10% or $10 per sale
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  coupons Coupon[]
+  orders  Order[]
+
+  @@index([refCode])
+}
+
+// --- Growth: coupon / discount codes ---
+model Coupon {
+  id             String    @id @default(cuid())
+  code           String    @unique // matched case-insensitively in app logic
+  description    String?
+  discountType   String // "percent" | "fixed"
+  discountValue  Float // 15 => 15% or $15
+  minSubtotal    Float? // minimum order retail to apply
+  maxRedemptions Int? // null = unlimited
+  perUserLimit   Int?      @default(1)
+  redemptions    Int       @default(0) // completed uses
+  active         Boolean   @default(true)
+  startsAt       DateTime?
+  endsAt         DateTime?
+  influencerId   String?
+  influencer     Influencer? @relation(fields: [influencerId], references: [id])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  orders Order[]
+
+  @@index([active])
 }

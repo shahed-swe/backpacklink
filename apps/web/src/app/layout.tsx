@@ -3,7 +3,9 @@ import { Plus_Jakarta_Sans, Sora } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import { PromoBar } from '@/components/PromoBar';
 import { AuthProvider } from '@/lib/auth';
+import { api } from '@/lib/api';
 
 const sans = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-sans' });
 const display = Sora({ subsets: ['latin'], variable: '--font-display' });
@@ -29,11 +31,13 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image' },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const { bar } = await api.promotions('web');
   return (
     <html lang="en" className={`${sans.variable} ${display.variable}`}>
       <body className="min-h-screen font-sans">
         <AuthProvider>
+          {bar && <PromoBar promo={bar} />}
           <Header />
           <main>{children}</main>
           <Footer />

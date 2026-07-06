@@ -1,12 +1,12 @@
-import type { Country, Continent, Package, PackageType } from './types';
+import type { Country, Continent, Package, PackageType, Promotions } from './types';
 
 const API_URL = process.env.API_URL ?? 'http://localhost:4000';
 
 // Revalidate catalog data periodically (ISR-friendly). Backend also caches.
 const REVALIDATE = 1800;
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, { next: { revalidate: REVALIDATE } });
+async function get<T>(path: string, revalidate = REVALIDATE): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, { next: { revalidate } });
   if (!res.ok) throw new Error(`API ${res.status} for ${path}`);
   return (await res.json()) as T;
 }
@@ -50,6 +50,14 @@ export const api = {
 
   packageDetail: (id: string) =>
     safe(() => get<{ data: Package }>(`/api/catalog/packages/${id}`).then((r) => r.data), null),
+
+  // Admin-managed promo bar + campaign banners. Short revalidate so edits show fast.
+  promotions: (placement: 'web' | 'mobile' = 'web') =>
+    safe(
+      () =>
+        get<{ data: Promotions }>(`/api/promotions?placement=${placement}`, 60).then((r) => r.data),
+      { bar: null, banners: [] } as Promotions,
+    ),
 };
 
 export function slugify(s: string): string {

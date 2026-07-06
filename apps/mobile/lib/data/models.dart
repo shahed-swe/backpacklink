@@ -35,6 +35,46 @@ class Continent {
       Continent(id: _toInt(j['id']), name: '${j['name']}', flag: j['flag']);
 }
 
+/// Admin-managed campaign content: the promo bar + campaign banners.
+class Promotion {
+  final String id, kind, title;
+  final String? subtitle, imageUrl, bgColor, textColor, ctaLabel, ctaUrl, couponCode;
+  Promotion({
+    required this.id,
+    required this.kind,
+    required this.title,
+    this.subtitle,
+    this.imageUrl,
+    this.bgColor,
+    this.textColor,
+    this.ctaLabel,
+    this.ctaUrl,
+    this.couponCode,
+  });
+  factory Promotion.fromJson(Map<String, dynamic> j) => Promotion(
+        id: '${j['id']}',
+        kind: '${j['kind']}',
+        title: '${j['title']}',
+        subtitle: j['subtitle'],
+        imageUrl: j['imageUrl'],
+        bgColor: j['bgColor'],
+        textColor: j['textColor'],
+        ctaLabel: j['ctaLabel'],
+        ctaUrl: j['ctaUrl'],
+        couponCode: j['couponCode'],
+      );
+}
+
+class HomePromotions {
+  final Promotion? bar;
+  final List<Promotion> banners;
+  const HomePromotions({this.bar, this.banners = const []});
+  factory HomePromotions.fromJson(Map<String, dynamic> j) => HomePromotions(
+        bar: j['bar'] == null ? null : Promotion.fromJson(j['bar']),
+        banners: (j['banners'] as List? ?? []).map((e) => Promotion.fromJson(e)).toList(),
+      );
+}
+
 class Network {
   final String name;
   final List<String> generations;

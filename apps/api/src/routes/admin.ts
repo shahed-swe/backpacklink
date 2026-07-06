@@ -225,3 +225,79 @@ adminRouter.post(
     res.json({ ok: true, tip });
   }),
 );
+
+// --- Promotions (campaign bar + banners; fully admin-managed, event-driven) ---
+
+const promotionInput = z.object({
+  kind: z.enum(['bar', 'banner']),
+  title: z.string().min(1).max(200),
+  subtitle: z.string().max(400).nullish(),
+  imageUrl: z.string().max(1000).nullish(),
+  bgColor: z.string().max(30).nullish(),
+  textColor: z.string().max(30).nullish(),
+  ctaLabel: z.string().max(80).nullish(),
+  ctaUrl: z.string().max(1000).nullish(),
+  couponCode: z.string().max(80).nullish(),
+  placement: z.enum(['web', 'mobile', 'both']).default('both'),
+  priority: z.coerce.number().int().default(0),
+  active: z.boolean().default(true),
+  startsAt: z.string().nullish(),
+  endsAt: z.string().nullish(),
+});
+
+// Coerce blank strings to null and date strings to Date; leaves `undefined` keys
+// out so PATCH is a true partial update (Prisma ignores undefined).
+function toPromoData(input: Record<string, unknown>): Record<string, unknown> {
+  const d: Record<string, unknown> = { ...input };
+  for (const k of ['subtitle', 'imageUrl', 'bgColor', 'textColor', 'ctaLabel', 'ctaUrl', 'couponCode']) {
+    if (d[k] === '') d[k] = null;
+  }
+  for (const k of ['startsAt', 'endsAt'] as const) {
+    if (d[k] === '') d[k] = null;
+    else if (typeof d[k] === 'string') d[k] = new Date(d[k] as string);
+  }
+  return d;
+}
+
+// GET /api/admin/promotions — all promos (incl. inactive/expired) for management.
+adminRouter.get(
+  '/promotions',
+  asyncHandler(async (_req, res) => {
+    const promotions = await prisma.promotion.findMany({
+      orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
+    });
+    res.json({ ok: true, data: promotions });
+  }),
+);
+
+// POST /api/admin/promotions — create a bar or banner.
+adminRouter.post(
+  '/promotions',
+  asyncHandler(async (req, res) => {
+    const input = promotionInput.parse(req.body);
+    const promotion = await prisma.promotion.create({ data: toPromoData(input) as never });
+    res.status(201).json({ ok: true, data: promotion });
+  }),
+);
+
+// PATCH /api/admin/promotions/:id — partial update.
+adminRouter.patch(
+  '/promotions/:id',
+  asyncHandler(async (req, res) => {
+    const input = promotionInput.partial().parse(req.body);
+    const promotion = await prisma.promotion.update({
+      where: { id: req.params.id },
+      data: toPromoData(input) as never,
+    });
+    res.json({ ok: true, data: promotion });
+  }),
+);
+
+// DELETE /api/admin/promotions/:id
+adminRouter.delete(
+  '/promotions/:id',
+  asyncHandler(async (req, res) => {
+    await prisma.promotion.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  }),
+);

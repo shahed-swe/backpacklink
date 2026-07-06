@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { api, slugify } from '@/lib/api';
 import { CountryCard } from '@/components/CountryCard';
 import { HeroSearch } from '@/components/HeroSearch';
+import { CampaignBanner } from '@/components/CampaignBanner';
 
 // Render at request time so live catalog data always shows (avoids an empty
 // build-time prerender when the API isn't reachable during `next build`).
@@ -14,7 +15,11 @@ const POPULAR = [
 ];
 
 export default async function HomePage() {
-  const [countries, continents] = await Promise.all([api.countries(), api.continents()]);
+  const [countries, continents, promos] = await Promise.all([
+    api.countries(),
+    api.continents(),
+    api.promotions('web'),
+  ]);
 
   const popular = POPULAR.map((name) => countries.find((c) => c.name === name)).filter(
     (c): c is NonNullable<typeof c> => Boolean(c),
@@ -23,6 +28,10 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* Admin-managed campaign banners (event-driven, above the hero) */}
+      {promos.banners.map((b) => (
+        <CampaignBanner key={b.id} promo={b} />
+      ))}
       {/* Hero */}
       <section className="relative overflow-hidden bg-lagoon">
         <div className="absolute inset-0 opacity-20 [background:radial-gradient(circle_at_20%_20%,white,transparent_40%),radial-gradient(circle_at_80%_0%,white,transparent_35%)]" />

@@ -22,7 +22,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late Future<({List<Country> countries, List<Continent> continents})> _future;
+  late Future<({List<Country> countries, List<Continent> continents, HomePromotions promos})> _future;
   String _query = '';
 
   @override
@@ -31,10 +31,21 @@ class _HomeScreenState extends State<HomeScreen> {
     _future = _load();
   }
 
-  Future<({List<Country> countries, List<Continent> continents})> _load() async {
-    final catalog = context.read<AppState>().catalog;
-    final results = await Future.wait([catalog.countries(), catalog.continents()]);
-    return (countries: results[0] as List<Country>, continents: results[1] as List<Continent>);
+  Future<({List<Country> countries, List<Continent> continents, HomePromotions promos})> _load() async {
+    final state = context.read<AppState>();
+    final results = await Future.wait([state.catalog.countries(), state.catalog.continents()]);
+    // A promo fetch failure must never block the page — degrade to no promos.
+    HomePromotions promos;
+    try {
+      promos = await state.promotions.home();
+    } catch (_) {
+      promos = const HomePromotions();
+    }
+    return (
+      countries: results[0] as List<Country>,
+      continents: results[1] as List<Continent>,
+      promos: promos,
+    );
   }
 
   void _openCountry(Country c) =>
@@ -44,17 +55,17 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: AsyncView<({List<Country> countries, List<Continent> continents})>(
+        child: AsyncView<({List<Country> countries, List<Continent> continents, HomePromotions promos})>(
           future: _future,
           onRetry: () => setState(() => _future = _load()),
           errorMessage: 'Could not load destinations.',
-          builder: (data) => _content(data.countries, data.continents),
+          builder: (data) => _content(data.countries, data.continents, data.promos),
         ),
       ),
     );
   }
 
-  Widget _content(List<Country> countries, List<Continent> continents) {
+  Widget _content(List<Country> countries, List<Continent> continents, HomePromotions promos) {
     final filtered = _query.isEmpty
         ? <Country>[]
         : countries.where((c) => c.name.toLowerCase().contains(_query.toLowerCase())).take(20).toList();
@@ -65,7 +76,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return CustomScrollView(
       slivers: [
+        if (promos.bar != null)
+          SliverToBoxAdapter(child: PromoBar(promo: promos.bar!)),
         SliverToBoxAdapter(child: _Hero(count: countries.length)),
+        ...promos.banners.map(
+          (b) => SliverToBoxAdapter(child: CampaignBanner(promo: b)),
+        ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           sliver: SliverToBoxAdapter(

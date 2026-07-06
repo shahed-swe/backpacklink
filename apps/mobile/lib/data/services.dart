@@ -63,6 +63,17 @@ class CatalogService {
   }
 }
 
+/// Admin-managed campaign content (promo bar + banners) for the home page.
+class PromotionsService {
+  final ApiClient _api;
+  PromotionsService(this._api);
+
+  Future<HomePromotions> home() async {
+    final res = await _api.get('/api/promotions?placement=mobile');
+    return HomePromotions.fromJson((res['data'] as Map<String, dynamic>?) ?? const {});
+  }
+}
+
 /// Support chat (history via REST; realtime via socket in the screen).
 class SupportService {
   final ApiClient _api;

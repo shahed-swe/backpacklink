@@ -5,6 +5,7 @@ import compression from 'compression';
 import { env } from './env.js';
 import { healthRouter } from './routes/health.js';
 import { catalogRouter } from './routes/catalog.js';
+import { promotionsRouter } from './routes/promotions.js';
 import { authRouter } from './routes/auth.js';
 import { checkoutRouter } from './routes/checkout.js';
 import { meRouter } from './routes/me.js';
@@ -33,6 +34,7 @@ export function createApp() {
 
   app.use('/api/health', healthRouter);
   app.use('/api/catalog', catalogRouter);
+  app.use('/api/promotions', promotionsRouter);
   app.use('/api/auth', rateLimit({ windowMs: 60_000, max: 20 }), authRouter);
   app.use('/api/checkout', rateLimit({ windowMs: 60_000, max: 30 }), checkoutRouter);
   app.use('/api/me', meRouter);

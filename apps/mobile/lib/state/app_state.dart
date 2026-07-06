@@ -10,6 +10,7 @@ class AppState extends ChangeNotifier {
 
   late final AuthService auth = AuthService(_api);
   late final CatalogService catalog = CatalogService(_api);
+  late final PromotionsService promotions = PromotionsService(_api);
   late final AccountService account = AccountService(_api);
   late final SupportService support = SupportService(_api);
   late final CommunityService community = CommunityService(_api);
