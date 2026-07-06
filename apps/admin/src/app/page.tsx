@@ -41,7 +41,19 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-extrabold text-ink">Sales Dashboard</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-display text-2xl font-extrabold text-ink">Sales Dashboard</h1>
+          {ov?.reseller && (
+            <span
+              className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
+                ov.reseller.lowBalance ? 'bg-coral-50 text-coral-700' : 'bg-brand-50 text-brand-700'
+              }`}
+              title="Your esimcard reseller wallet balance"
+            >
+              Reseller balance: {ov.reseller.balance != null ? money(ov.reseller.balance) : '—'}
+            </span>
+          )}
+        </div>
         <div className="flex gap-1 rounded-full bg-white p-1 shadow-card">
           {RANGES.map(([v, label]) => (
             <button
