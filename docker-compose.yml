@@ -19,6 +19,8 @@ services:
       API_PORT: "4000"
       # SQLite lives on a named volume (kept out of the image / schema dir).
       DATABASE_URL: "file:/data/dev.db"
+      # Uploaded banner images persist on the same volume.
+      UPLOAD_DIR: "/data/uploads"
       # Seeds an admin user on first boot (change these!).
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@backpacklink.local}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme123}

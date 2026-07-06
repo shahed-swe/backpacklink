@@ -59,6 +59,12 @@ export const env = {
 
   // Web app URL (for Stripe redirect URLs)
   WEB_URL: str('WEB_URL', 'http://localhost:3000'),
+
+  // Uploaded images (banners). Stored on disk, served at /uploads.
+  // In prod set to a persistent volume path (e.g. /data/uploads).
+  UPLOAD_DIR: str('UPLOAD_DIR', './uploads'),
+  // Optional explicit public base for building upload URLs; else derived from the request.
+  PUBLIC_API_URL: str('PUBLIC_API_URL', ''),
 };
 
 // Accept standard secret keys (sk_) and restricted keys (rk_), test or live.

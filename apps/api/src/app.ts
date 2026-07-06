@@ -6,6 +6,7 @@ import { env } from './env.js';
 import { healthRouter } from './routes/health.js';
 import { catalogRouter } from './routes/catalog.js';
 import { promotionsRouter } from './routes/promotions.js';
+import { UPLOAD_DIR, ensureUploadDir } from './lib/uploads.js';
 import { authRouter } from './routes/auth.js';
 import { checkoutRouter } from './routes/checkout.js';
 import { couponsRouter } from './routes/coupons.js';
@@ -19,6 +20,7 @@ import { errorHandler, notFound } from './middleware/error.js';
 
 export function createApp() {
   const app = express();
+  app.set('trust proxy', true); // behind nginx — honor X-Forwarded-Proto/Host
 
   app.use(helmet());
   app.use(compression());
@@ -36,6 +38,15 @@ export function createApp() {
   app.use('/api/health', healthRouter);
   app.use('/api/catalog', catalogRouter);
   app.use('/api/promotions', promotionsRouter);
+
+  // Serve uploaded banner images — cross-origin so the web + app can embed them.
+  ensureUploadDir();
+  app.use(
+    '/uploads',
+    express.static(UPLOAD_DIR, {
+      setHeaders: (res) => res.set('Cross-Origin-Resource-Policy', 'cross-origin'),
+    }),
+  );
   app.use('/api/auth', rateLimit({ windowMs: 60_000, max: 20 }), authRouter);
   app.use('/api/checkout', rateLimit({ windowMs: 60_000, max: 30 }), checkoutRouter);
   app.use('/api/coupons', rateLimit({ windowMs: 60_000, max: 30 }), couponsRouter);

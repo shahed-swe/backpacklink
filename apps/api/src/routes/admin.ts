@@ -3,6 +3,7 @@ import type { Request } from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../middleware/error.js';
 import { generateRefCode, normalizeRef, commissionOwed } from '../influencers/service.js';
+import { uploadImage, publicUploadUrl } from '../lib/uploads.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { prisma } from '../lib/db.js';
 import { esimcard } from '../esimcard/service.js';
@@ -159,6 +160,7 @@ adminRouter.get(
         id: t.id,
         user: t.user,
         status: t.status,
+        starred: t.starred,
         unreadByAdmin: t.unreadByAdmin,
         lastMessageAt: t.lastMessageAt,
         lastMessage: t.messages[0]?.body ?? null,
@@ -199,6 +201,21 @@ adminRouter.post(
     emitToThread(thread.id, 'support:message', msg);
     emitToAdmins('support:thread-updated', { threadId: thread.id });
     res.status(201).json({ ok: true, message: msg });
+  }),
+);
+
+// PATCH /api/admin/support/threads/:id — mark resolved/open or star/unstar.
+const threadPatchSchema = z.object({
+  status: z.enum(['open', 'resolved']).optional(),
+  starred: z.boolean().optional(),
+});
+adminRouter.patch(
+  '/support/threads/:id',
+  asyncHandler(async (req, res) => {
+    const data = threadPatchSchema.parse(req.body);
+    const thread = await prisma.supportThread.update({ where: { id: req.params.id }, data });
+    emitToAdmins('support:thread-updated', { threadId: thread.id });
+    res.json({ ok: true, data: thread });
   }),
 );
 
@@ -303,6 +320,17 @@ adminRouter.delete(
     res.json({ ok: true });
   }),
 );
+
+// POST /api/admin/uploads — upload a banner image; returns its public URL.
+adminRouter.post('/uploads', (req, res) => {
+  uploadImage.single('file')(req, res, (err: unknown) => {
+    if (err) {
+      return res.status(400).json({ ok: false, error: err instanceof Error ? err.message : 'Upload failed' });
+    }
+    if (!req.file) return res.status(400).json({ ok: false, error: 'No file uploaded' });
+    res.json({ ok: true, url: publicUploadUrl(req, req.file.filename) });
+  });
+});
 
 // --- Coupons (discount codes, optionally tied to an influencer) ---
 

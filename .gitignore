@@ -24,6 +24,9 @@ build/
 out/
 *.tsbuildinfo
 
+# Uploaded banner images (persisted on a volume in prod)
+apps/api/uploads/
+
 # Database (dev SQLite)
 *.db
 *.db-journal

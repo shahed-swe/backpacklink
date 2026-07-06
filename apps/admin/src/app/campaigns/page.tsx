@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { useApi } from '@/lib/use-api';
-import { apiFetch } from '@/lib/client-api';
+import { apiFetch, uploadFile } from '@/lib/client-api';
 
 interface Promotion {
   id: string;
@@ -58,9 +58,26 @@ export default function Campaigns() {
   const [form, setForm] = useState<Form>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
+
+  async function onPickImage(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setUploading(true);
+    setMsg(null);
+    try {
+      const { url } = await uploadFile('/api/admin/uploads', file);
+      set('imageUrl', url);
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  }
 
   function startEdit(p: Promotion) {
     setEditingId(p.id);
@@ -144,7 +161,29 @@ export default function Campaigns() {
             options={[['both', 'Web + App'], ['web', 'Web only'], ['mobile', 'App only']]} />
           <Text label="Title" value={form.title} onChange={(v) => set('title', v)} full />
           <Text label="Subtitle" value={form.subtitle} onChange={(v) => set('subtitle', v)} full />
-          <Text label="Image URL (banner background)" value={form.imageUrl} onChange={(v) => set('imageUrl', v)} full />
+          <div className="sm:col-span-2">
+            <span className="text-sm font-semibold text-ink/70">Banner image</span>
+            <div className="mt-1 flex items-center gap-3">
+              {form.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={form.imageUrl} alt="banner" className="h-16 w-28 rounded-lg border border-brand-100 object-cover" />
+              ) : (
+                <div className="flex h-16 w-28 items-center justify-center rounded-lg border border-dashed border-brand-200 text-xs text-ink/40">
+                  No image
+                </div>
+              )}
+              <label className="btn-ghost cursor-pointer">
+                {uploading ? 'Uploading…' : form.imageUrl ? 'Replace' : 'Upload image'}
+                <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={onPickImage} />
+              </label>
+              {form.imageUrl && (
+                <button type="button" onClick={() => set('imageUrl', '')} className="text-sm font-semibold text-coral-600">
+                  Remove
+                </button>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-ink/40">PNG / JPG / WebP, up to ~5 MB.</p>
+          </div>
           <Text label="CTA label" value={form.ctaLabel} onChange={(v) => set('ctaLabel', v)} />
           <Text label="CTA link (e.g. /plans or https://…)" value={form.ctaUrl} onChange={(v) => set('ctaUrl', v)} />
           <Text label="Coupon code (optional)" value={form.couponCode} onChange={(v) => set('couponCode', v)} />

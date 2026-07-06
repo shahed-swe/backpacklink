@@ -116,7 +116,8 @@ model SupportThread {
   id            String   @id @default(cuid())
   userId        String   @unique
   user          User     @relation(fields: [userId], references: [id])
-  status        String   @default("open") // open | closed
+  status        String   @default("open") // open | resolved (completed)
+  starred       Boolean  @default(false) // admin favourite / important
   unreadByAdmin Int      @default(0)
   unreadByUser  Int      @default(0)
   lastMessageAt DateTime @default(now())
@@ -125,6 +126,7 @@ model SupportThread {
   messages SupportMessage[]
 
   @@index([lastMessageAt])
+  @@index([status])
 }
 
 model SupportMessage {
