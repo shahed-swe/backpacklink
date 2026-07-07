@@ -12,6 +12,7 @@ import 'region_screen.dart';
 import 'coverage_screen.dart';
 import 'global_screen.dart';
 import 'destinations_screen.dart';
+import 'plan_detail_screen.dart';
 
 const _popular = [
   'Japan', 'Thailand', 'United States', 'Turkey',
@@ -241,9 +242,33 @@ class _HeroState extends State<_Hero> {
     return v == null ? null : Color(v);
   }
 
-  static bool _launchable(String? url) {
+  // Extract a plan id from a CTA url like https://…/plans/<id> (or /plans/<id>).
+  static String? _planId(String? url) {
     final uri = url == null ? null : Uri.tryParse(url);
-    return uri != null && uri.hasScheme;
+    if (uri == null) return null;
+    final segs = uri.pathSegments;
+    final idx = segs.indexOf('plans');
+    if (idx != -1 && idx + 1 < segs.length && segs[idx + 1].isNotEmpty) return segs[idx + 1];
+    return null;
+  }
+
+  static bool _actionable(Promotion p) {
+    if (p.ctaLabel == null || p.ctaLabel!.isEmpty || p.ctaUrl == null || p.ctaUrl!.isEmpty) return false;
+    final uri = Uri.tryParse(p.ctaUrl!);
+    return uri != null && (uri.hasScheme || _planId(p.ctaUrl) != null);
+  }
+
+  // A plan link opens the plan inside the app; anything else opens externally.
+  void _handleCta(String url) {
+    final id = _planId(url);
+    if (id != null) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => PlanDetailScreen(packageId: id)));
+      return;
+    }
+    final uri = Uri.tryParse(url);
+    if (uri != null && uri.hasScheme) {
+      launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   @override
@@ -330,10 +355,10 @@ class _HeroState extends State<_Hero> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.9))),
           ],
-          if (p.ctaLabel != null && p.ctaLabel!.isNotEmpty && _launchable(p.ctaUrl)) ...[
+          if (_actionable(p)) ...[
             const SizedBox(height: 14),
             FilledButton(
-              onPressed: () => launchUrl(Uri.parse(p.ctaUrl!), mode: LaunchMode.externalApplication),
+              onPressed: () => _handleCta(p.ctaUrl!),
               child: Text(p.ctaLabel!),
             ),
           ],
