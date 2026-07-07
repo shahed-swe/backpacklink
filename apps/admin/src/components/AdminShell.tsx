@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
+import { useApi } from '@/lib/use-api';
 
 const nav = [
   { href: '/', label: 'Dashboard', icon: '📊' },
@@ -22,6 +23,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading, logout } = useAuth();
+  const { data: ver } = useApi<{ version: string }>('/api/version');
   const isLogin = pathname === '/login';
 
   useEffect(() => {
@@ -75,6 +77,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <main>{children}</main>
         </div>
       </div>
+      <footer className="border-t border-brand-100 py-4 text-center text-xs text-ink/40">
+        BackpackLink Admin{ver?.version ? ` · v${ver.version}` : ''}
+      </footer>
     </div>
   );
 }

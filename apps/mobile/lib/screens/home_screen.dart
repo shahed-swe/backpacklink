@@ -15,6 +15,8 @@ const _popular = [
   'United Arab Emirates', 'Spain', 'Italy', 'Singapore',
 ];
 
+typedef _HomeData = ({List<Country> countries, List<Continent> continents, HomePromotions promos});
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
   @override
@@ -22,16 +24,26 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late Future<({List<Country> countries, List<Continent> continents, HomePromotions promos})> _future;
+  _HomeData? _data;
+  Object? _error;
   String _query = '';
 
   @override
   void initState() {
     super.initState();
-    _future = _load();
+    _refresh();
   }
 
-  Future<({List<Country> countries, List<Continent> continents, HomePromotions promos})> _load() async {
+  Future<void> _refresh() async {
+    try {
+      final data = await _load();
+      if (mounted) setState(() { _data = data; _error = null; });
+    } catch (e) {
+      if (mounted) setState(() => _error = e);
+    }
+  }
+
+  Future<_HomeData> _load() async {
     final state = context.read<AppState>();
     final results = await Future.wait([state.catalog.countries(), state.catalog.continents()]);
     // A promo fetch failure must never block the page — degrade to no promos.
@@ -53,14 +65,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final data = _data;
     return Scaffold(
       body: SafeArea(
-        child: AsyncView<({List<Country> countries, List<Continent> continents, HomePromotions promos})>(
-          future: _future,
-          onRetry: () => setState(() => _future = _load()),
-          errorMessage: 'Could not load destinations.',
-          builder: (data) => _content(data.countries, data.continents, data.promos),
-        ),
+        child: data == null
+            ? (_error != null
+                ? ErrorRetry('Could not load destinations.', _refresh)
+                : const LoadingView())
+            : RefreshIndicator(
+                onRefresh: _refresh,
+                child: _content(data.countries, data.continents, data.promos),
+              ),
       ),
     );
   }
@@ -75,6 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
         .toList();
 
     return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         if (promos.bar != null)
           SliverToBoxAdapter(child: PromoBar(promo: promos.bar!)),

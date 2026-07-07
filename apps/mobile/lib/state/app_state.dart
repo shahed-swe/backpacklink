@@ -60,4 +60,14 @@ class AppState extends ChangeNotifier {
     user = null;
     notifyListeners();
   }
+
+  /// Platform version from the backend (shown on the Account screen).
+  Future<String> appVersion() async {
+    try {
+      final res = await _api.get('/api/version');
+      return '${res['version'] ?? ''}';
+    } catch (_) {
+      return '';
+    }
+  }
 }

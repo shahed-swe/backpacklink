@@ -58,6 +58,9 @@ export const api = {
         get<{ data: Promotions }>(`/api/promotions?placement=${placement}`, 60).then((r) => r.data),
       { bar: null, banners: [] } as Promotions,
     ),
+
+  // Platform version (shown in the footer).
+  version: () => safe(() => get<{ version: string }>('/api/version', 300).then((r) => r.version), ''),
 };
 
 export function slugify(s: string): string {

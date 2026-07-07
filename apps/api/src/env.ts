@@ -60,6 +60,9 @@ export const env = {
   // Web app URL (for Stripe redirect URLs)
   WEB_URL: str('WEB_URL', 'http://localhost:3000'),
 
+  // Platform version shown in web/admin/mobile (single source of truth).
+  APP_VERSION: str('APP_VERSION', '0.1.0'),
+
   // Uploaded images (banners). Stored on disk, served at /uploads.
   // In prod set to a persistent volume path (e.g. /data/uploads).
   UPLOAD_DIR: str('UPLOAD_DIR', './uploads'),

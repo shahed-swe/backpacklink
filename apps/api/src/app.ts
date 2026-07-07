@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import { env } from './env.js';
 import { healthRouter } from './routes/health.js';
+import { versionRouter } from './routes/version.js';
 import { catalogRouter } from './routes/catalog.js';
 import { promotionsRouter } from './routes/promotions.js';
 import { UPLOAD_DIR, ensureUploadDir } from './lib/uploads.js';
@@ -36,6 +37,7 @@ export function createApp() {
   app.use(express.json());
 
   app.use('/api/health', healthRouter);
+  app.use('/api/version', versionRouter);
   app.use('/api/catalog', catalogRouter);
   app.use('/api/promotions', promotionsRouter);
 

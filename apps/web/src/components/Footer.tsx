@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { Logo } from './Logo';
+import { api } from '@/lib/api';
 
-export function Footer() {
+export async function Footer() {
+  const version = await api.version();
   return (
     <footer className="mt-24 border-t border-brand-100 bg-white">
       <div className="container-bp grid gap-10 py-14 md:grid-cols-4">
@@ -40,7 +42,10 @@ export function Footer() {
       <div className="border-t border-brand-100">
         <div className="container-bp flex flex-col items-center justify-between gap-2 py-6 text-xs text-ink/50 sm:flex-row">
           <p>© {new Date().getFullYear()} BackpackLink. All rights reserved.</p>
-          <p>Powered by global eSIM connectivity.</p>
+          <p>
+            Powered by global eSIM connectivity.
+            {version && <span className="ml-2 text-ink/40">v{version}</span>}
+          </p>
         </div>
       </div>
     </footer>

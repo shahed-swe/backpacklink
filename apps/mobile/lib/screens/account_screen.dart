@@ -18,6 +18,7 @@ class AccountScreen extends StatefulWidget {
 
 class _AccountScreenState extends State<AccountScreen> {
   Future<List<OrderRow>>? _orders;
+  Future<String>? _version;
 
   void _goLogin() =>
       Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
@@ -35,6 +36,7 @@ class _AccountScreenState extends State<AccountScreen> {
 
     final user = state.user!;
     _orders ??= state.account.orders();
+    _version ??= state.appVersion();
 
     return Scaffold(
       appBar: AppBar(
@@ -96,6 +98,18 @@ class _AccountScreenState extends State<AccountScreen> {
               );
             },
           ),
+          const SizedBox(height: 24),
+          Center(
+            child: FutureBuilder<String>(
+              future: _version,
+              builder: (_, snap) {
+                final v = snap.data ?? '';
+                return Text(v.isEmpty ? '' : 'Version $v',
+                    style: TextStyle(fontSize: 12, color: BpColors.inkFade(0.4)));
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
         ],
       ),
     );
