@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { api, slugify } from '@/lib/api';
 import { CountryCard } from '@/components/CountryCard';
 import { HeroSearch } from '@/components/HeroSearch';
-import { CampaignBanner } from '@/components/CampaignBanner';
+import { Hero } from '@/components/Hero';
 
 // Render at request time so live catalog data always shows (avoids an empty
 // build-time prerender when the API isn't reachable during `next build`).
@@ -28,57 +28,17 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* Admin-managed campaign banners (event-driven, above the hero) */}
-      {promos.banners.map((b) => (
-        <CampaignBanner key={b.id} promo={b} />
-      ))}
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-lagoon">
-        <div className="absolute inset-0 opacity-20 [background:radial-gradient(circle_at_20%_20%,white,transparent_40%),radial-gradient(circle_at_80%_0%,white,transparent_35%)]" />
-        <div className="container-bp relative grid gap-10 py-20 md:grid-cols-2 md:py-28">
-          <div className="text-white">
-            <span className="chip bg-white/15 text-white backdrop-blur">
-              🌍 200+ countries · instant delivery
-            </span>
-            <h1 className="mt-5 font-display text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">
-              Land. Scan. <br /> You&apos;re online.
-            </h1>
-            <p className="mt-5 max-w-md text-lg text-white/85">
-              Travel eSIM data plans that work the moment you arrive. No roaming bills, no SIM
-              swapping, no airport kiosks. Just data — anywhere you go.
-            </p>
-            <div className="mt-8">
-              <HeroSearch countries={countries} continents={continents} />
-            </div>
-            <div className="mt-6 flex flex-wrap gap-x-8 gap-y-2 text-sm text-white/80">
-              <span>✓ Keep your number</span>
-              <span>✓ Hotspot/tethering</span>
-              <span>✓ Up to 5G speeds</span>
-            </div>
-          </div>
-
-          {/* floating stat cards */}
-          <div className="relative hidden md:block">
-            <div className="absolute right-0 top-4 w-64 rotate-3 rounded-3xl bg-white p-5 shadow-card">
-              <p className="text-xs font-semibold text-ink/40">JAPAN · 5 GB</p>
-              <p className="mt-1 font-display text-2xl font-extrabold text-ink">30 days</p>
-              <div className="mt-3 flex items-center justify-between">
-                <span className="chip bg-brand-50 text-brand-700">4G/5G</span>
-                <span className="font-display font-bold text-brand-700">$12.90</span>
-              </div>
-            </div>
-            <div className="absolute right-32 top-44 w-60 -rotate-3 rounded-3xl bg-ink p-5 text-white shadow-card">
-              <p className="text-xs font-semibold text-white/50">EUROPE · 10 GB</p>
-              <p className="mt-1 font-display text-2xl font-extrabold">30 days</p>
-              <div className="mt-3 flex items-center justify-between">
-                <span className="chip bg-white/10 text-white">36 countries</span>
-                <span className="font-display font-bold text-coral-400">$18.40</span>
-              </div>
-            </div>
-          </div>
+      {/* Hero — banner-aware: default headline when there's no campaign, the
+          campaign image + copy when one exists, a carousel when several. The
+          search bar / chips / feature ticks stay fixed underneath either way. */}
+      <Hero banners={promos.banners}>
+        <HeroSearch countries={countries} continents={continents} />
+        <div className="mt-6 flex flex-wrap gap-x-8 gap-y-2 text-sm text-white/80">
+          <span>✓ Keep your number</span>
+          <span>✓ Hotspot/tethering</span>
+          <span>✓ Up to 5G speeds</span>
         </div>
-        <div className="h-8 rounded-t-[2.5rem] bg-sand-50" />
-      </section>
+      </Hero>
 
       {/* Popular destinations */}
       <section className="container-bp py-16">
