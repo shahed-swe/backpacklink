@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/formatters.dart';
 import '../core/theme.dart';
 import '../data/models.dart';
@@ -22,6 +23,11 @@ class _AccountScreenState extends State<AccountScreen> {
 
   void _goLogin() =>
       Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+
+  // Legal/policy pages live on the website; open them in an in-app browser view.
+  static const _webBase = 'https://www.backpacklink.com';
+  void _openLegal(String path) =>
+      launchUrl(Uri.parse('$_webBase$path'), mode: LaunchMode.inAppBrowserView);
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +104,27 @@ class _AccountScreenState extends State<AccountScreen> {
               );
             },
           ),
+          const SizedBox(height: 20),
+          const SectionHeader('Legal', 'Policies & terms'),
+          const SizedBox(height: 12),
+          _HelpTile(
+            icon: Icons.description_outlined,
+            label: 'Terms & Conditions',
+            trailingIcon: Icons.open_in_new,
+            onTap: () => _openLegal('/terms'),
+          ),
+          _HelpTile(
+            icon: Icons.privacy_tip_outlined,
+            label: 'Privacy Policy',
+            trailingIcon: Icons.open_in_new,
+            onTap: () => _openLegal('/privacy'),
+          ),
+          _HelpTile(
+            icon: Icons.lock_outline,
+            label: 'Password Policy',
+            trailingIcon: Icons.open_in_new,
+            onTap: () => _openLegal('/password-policy'),
+          ),
           const SizedBox(height: 24),
           Center(
             child: FutureBuilder<String>(
@@ -120,7 +147,13 @@ class _HelpTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _HelpTile({required this.icon, required this.label, required this.onTap});
+  final IconData trailingIcon;
+  const _HelpTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.trailingIcon = Icons.chevron_right,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +161,7 @@ class _HelpTile extends StatelessWidget {
       child: ListTile(
         leading: Icon(icon, color: BpColors.brand),
         title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-        trailing: const Icon(Icons.chevron_right, color: BpColors.brand),
+        trailing: Icon(trailingIcon, color: BpColors.brand),
         onTap: onTap,
       ),
     );

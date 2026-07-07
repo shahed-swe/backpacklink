@@ -6,8 +6,8 @@ export async function Footer() {
   const version = await api.version();
   return (
     <footer className="mt-24 border-t border-brand-100 bg-white">
-      <div className="container-bp grid gap-10 py-14 md:grid-cols-4">
-        <div className="md:col-span-1">
+      <div className="container-bp grid gap-10 py-14 md:grid-cols-5">
+        <div className="md:col-span-2">
           <Logo />
           <p className="mt-4 max-w-xs text-sm text-ink/60">
             Stay connected in 200+ countries. Instant eSIM data plans for travelers — no roaming
@@ -27,15 +27,15 @@ export async function Footer() {
           links={[
             { href: '/how-it-works', label: 'How it works' },
             { href: '/faq', label: 'FAQ' },
-            { href: '/help/install', label: 'Install guide' },
+            { href: '/help', label: 'Install guide' },
           ]}
         />
         <FooterCol
-          title="Company"
+          title="Legal"
           links={[
-            { href: '/about', label: 'About' },
-            { href: '/terms', label: 'Terms' },
-            { href: '/privacy', label: 'Privacy' },
+            { href: '/terms', label: 'Terms & Conditions' },
+            { href: '/privacy', label: 'Privacy Policy' },
+            { href: '/password-policy', label: 'Password Policy' },
           ]}
         />
       </div>
