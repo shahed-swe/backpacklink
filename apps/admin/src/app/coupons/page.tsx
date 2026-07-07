@@ -88,8 +88,9 @@ export default function Coupons() {
       maxRedemptions: form.maxRedemptions === '' ? null : Number(form.maxRedemptions),
       perUserLimit: form.perUserLimit === '' ? null : Number(form.perUserLimit),
       active: form.active,
-      startsAt: form.startsAt || null,
-      endsAt: form.endsAt || null,
+      // Local datetime-local value -> absolute UTC instant (timezone-correct).
+      startsAt: form.startsAt ? new Date(form.startsAt).toISOString() : null,
+      endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : null,
       influencerId: form.influencerId || null,
     };
     try {

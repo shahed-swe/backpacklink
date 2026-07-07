@@ -113,8 +113,10 @@ export default function Campaigns() {
       placement: form.placement,
       priority: Number(form.priority) || 0,
       active: form.active,
-      startsAt: form.startsAt || null,
-      endsAt: form.endsAt || null,
+      // Convert the local datetime-local value to an absolute UTC instant so the
+      // schedule is correct regardless of the server's timezone.
+      startsAt: form.startsAt ? new Date(form.startsAt).toISOString() : null,
+      endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : null,
     };
     try {
       if (editingId) await apiFetch(`/api/admin/promotions/${editingId}`, { method: 'PATCH', body });
