@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/theme.dart';
 import '../data/models.dart';
 import '../state/app_state.dart';
@@ -240,14 +241,20 @@ class _HeroState extends State<_Hero> {
     return v == null ? null : Color(v);
   }
 
+  static bool _launchable(String? url) {
+    final uri = url == null ? null : Uri.tryParse(url);
+    return uri != null && uri.hasScheme;
+  }
+
   @override
   Widget build(BuildContext context) {
     final banners = widget.banners;
     if (banners.isEmpty) return _defaultHero();
     return SizedBox(
-      height: 200,
+      height: 244,
       child: Stack(children: [
         PageView.builder(
+          key: const PageStorageKey('heroBanners'),
           controller: _pc,
           itemCount: banners.length,
           onPageChanged: (i) => setState(() => _i = i),
@@ -319,9 +326,16 @@ class _HeroState extends State<_Hero> {
           if (p.subtitle != null && p.subtitle!.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(p.subtitle!,
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.9))),
+          ],
+          if (p.ctaLabel != null && p.ctaLabel!.isNotEmpty && _launchable(p.ctaUrl)) ...[
+            const SizedBox(height: 14),
+            FilledButton(
+              onPressed: () => launchUrl(Uri.parse(p.ctaUrl!), mode: LaunchMode.externalApplication),
+              child: Text(p.ctaLabel!),
+            ),
           ],
         ],
       ),
