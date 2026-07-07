@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme.dart';
@@ -94,10 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
       slivers: [
         if (promos.bar != null)
           SliverToBoxAdapter(child: PromoBar(promo: promos.bar!)),
-        SliverToBoxAdapter(child: _Hero(count: countries.length)),
-        ...promos.banners.map(
-          (b) => SliverToBoxAdapter(child: CampaignBanner(promo: b)),
-        ),
+        SliverToBoxAdapter(child: _Hero(count: countries.length, banners: promos.banners)),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           sliver: SliverToBoxAdapter(
@@ -199,12 +198,137 @@ class _HomeScreenState extends State<HomeScreen> {
       SliverPadding(padding: const EdgeInsets.fromLTRB(16, 24, 16, 12), sliver: SliverToBoxAdapter(child: child));
 }
 
-class _Hero extends StatelessWidget {
+/// Banner-aware hero: default headline when there's no campaign; the campaign
+/// image + copy when one exists; a swipeable, auto-advancing carousel when
+/// several. The search + sections below (in the sliver list) stay put.
+class _Hero extends StatefulWidget {
   final int count;
-  const _Hero({required this.count});
+  final List<Promotion> banners;
+  const _Hero({required this.count, required this.banners});
+  @override
+  State<_Hero> createState() => _HeroState();
+}
+
+class _HeroState extends State<_Hero> {
+  final _pc = PageController();
+  Timer? _timer;
+  int _i = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.banners.length > 1) {
+      _timer = Timer.periodic(const Duration(seconds: 6), (_) {
+        if (!mounted || !_pc.hasClients) return;
+        _i = (_i + 1) % widget.banners.length;
+        _pc.animateToPage(_i, duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pc.dispose();
+    super.dispose();
+  }
+
+  static Color? _color(String? hex) {
+    if (hex == null || hex.isEmpty) return null;
+    final h = hex.replaceAll('#', '');
+    final v = int.tryParse(h.length == 6 ? 'FF$h' : h, radix: 16);
+    return v == null ? null : Color(v);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final banners = widget.banners;
+    if (banners.isEmpty) return _defaultHero();
+    return SizedBox(
+      height: 200,
+      child: Stack(children: [
+        PageView.builder(
+          controller: _pc,
+          itemCount: banners.length,
+          onPageChanged: (i) => setState(() => _i = i),
+          itemBuilder: (_, i) => _bannerCard(banners[i]),
+        ),
+        if (banners.length > 1)
+          Positioned(
+            bottom: 12,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(banners.length, (idx) {
+                final active = idx == _i;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  height: 6,
+                  width: active ? 18 : 6,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: active ? 1 : 0.5),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                );
+              }),
+            ),
+          ),
+      ]),
+    );
+  }
+
+  Widget _bannerCard(Promotion p) {
+    final hasImage = p.imageUrl != null && p.imageUrl!.isNotEmpty;
+    final bg = _color(p.bgColor);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 30),
+      decoration: BoxDecoration(
+        gradient: bg == null && !hasImage ? BpGradients.lagoon : null,
+        color: bg,
+        image: hasImage
+            ? DecorationImage(
+                image: NetworkImage(p.imageUrl!),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.4), BlendMode.darken),
+              )
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (p.couponCode != null && p.couponCode!.isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text('Use code ${p.couponCode}',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+            ),
+            const SizedBox(height: 10),
+          ],
+          Text(p.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800, height: 1.1)),
+          if (p.subtitle != null && p.subtitle!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(p.subtitle!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.9))),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _defaultHero() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 28, 20, 28),
@@ -218,7 +342,7 @@ class _Hero extends StatelessWidget {
           const Text('Land. Scan.\nYou’re online.',
               style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w800, height: 1.1)),
           const SizedBox(height: 8),
-          Text('Travel eSIM data in $count+ countries — no roaming bills.',
+          Text('Travel eSIM data in ${widget.count}+ countries — no roaming bills.',
               style: TextStyle(color: Colors.white.withValues(alpha: 0.9))),
         ],
       ),
