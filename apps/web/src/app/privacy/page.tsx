@@ -34,7 +34,7 @@ export default function PrivacyPage() {
         <List
           items={[
             'to create and manage your account and deliver the eSIMs you purchase;',
-            'to send order confirmations, QR codes, and important service messages;',
+            'to contact you about an order, or about your account, when we need to;',
             'to provide customer support and respond to your enquiries;',
             'to prevent fraud and abuse and to keep the service secure;',
             'to improve our products and, where you have opted in, to send occasional offers.',
@@ -47,8 +47,8 @@ export default function PrivacyPage() {
         <List
           items={[
             'our eSIM/connectivity partners, to provision and activate your plan;',
-            'our payment processor, to take payment securely;',
-            'infrastructure and email providers that host our systems and deliver your receipts.',
+            'our payment processor, to take payment securely and issue your receipt;',
+            'infrastructure providers that host our systems.',
           ]}
         />
         <p>

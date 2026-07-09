@@ -125,8 +125,8 @@ export default async function HomePage() {
               Your next trip is data-ready.
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-white/70">
-              Pick a destination, pay securely, and get your eSIM QR code instantly by email and in
-              your account.
+              Pick a destination, pay securely, and get your eSIM QR code instantly in your
+              account.
             </p>
             <Link href="/destinations" className="btn-primary mt-7">
               Browse eSIM plans
@@ -173,6 +173,6 @@ const FEATURES = [
 
 const STEPS = [
   { title: 'Choose your plan', body: 'Search your destination and pick the data, validity, and speed that fits your trip.' },
-  { title: 'Pay securely', body: 'Checkout with your card. We email your QR code and save it to your account instantly.' },
+  { title: 'Pay securely', body: 'Checkout with your card. Your QR code is saved to your account instantly.' },
   { title: 'Scan & go', body: 'Open your camera or eSIM settings, scan the code, and you’re online the moment you land.' },
 ];

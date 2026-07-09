@@ -11,15 +11,19 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String    @id @default(cuid())
+  email        String    @unique
   phone        String?
   name         String?
   passwordHash String
-  role         String   @default("customer") // customer | admin
+  role         String    @default("customer") // customer | admin
   country      String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  // Set when the customer deletes their account. Orders/eSIMs must be retained
+  // as financial records, so we scrub the identity they point at instead of
+  // deleting the row. A deleted user can never authenticate again.
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   esims         Esim[]
   orders        Order[]

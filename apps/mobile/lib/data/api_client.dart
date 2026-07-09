@@ -49,6 +49,24 @@ class ApiClient {
     return _handle(res);
   }
 
+  Future<dynamic> patch(String path, [Map<String, dynamic>? body]) async {
+    final res = await http.patch(
+      Uri.parse('${Config.apiUrl}$path'),
+      headers: _headers,
+      body: body == null ? null : jsonEncode(body),
+    );
+    return _handle(res);
+  }
+
+  Future<dynamic> delete(String path, [Map<String, dynamic>? body]) async {
+    final res = await http.delete(
+      Uri.parse('${Config.apiUrl}$path'),
+      headers: _headers,
+      body: body == null ? null : jsonEncode(body),
+    );
+    return _handle(res);
+  }
+
   dynamic _handle(http.Response res) {
     final dynamic json = res.body.isEmpty ? {} : jsonDecode(res.body);
     if (res.statusCode >= 200 && res.statusCode < 300) return json;

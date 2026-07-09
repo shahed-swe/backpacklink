@@ -54,25 +54,36 @@ export default function PasswordPolicyPage() {
         />
       </Section>
 
-      <Section title="4. Resetting or changing your password">
+      <Section title="4. Changing your password">
         <p>
-          You can change your password at any time from your account settings. If you’ve forgotten
-          it, use the sign-in page to request a reset. For your security, reset links are
-          time-limited, and we’ll never ask for your password by email or chat.
+          You can change your password at any time in the BackpackLink app, under{' '}
+          <span className="font-semibold">Account → Security → Change password</span>. You’ll need
+          your current password to set a new one.
         </p>
       </Section>
 
-      <Section title="5. Extra account security tips">
+      <Section title="5. If you’ve forgotten your password">
+        <p>
+          Self-service password reset by email isn’t available yet. Please{' '}
+          <Link href="/support" className="font-semibold text-brand-700 hover:underline">
+            contact support
+          </Link>
+          , and we’ll verify your identity and help you regain access to your account. We will never
+          ask you for your password by email or in chat.
+        </p>
+      </Section>
+
+      <Section title="6. Extra account security tips">
         <List
           items={[
             'Prefer a reputable password manager to generate and store unique passwords.',
             'Watch out for phishing — always check you’re on the real BackpackLink site before entering credentials.',
-            'Keep your device and email account secure, since they can be used to reset your password.',
+            'Keep your device and email account secure, since they can be used to verify your identity.',
           ]}
         />
       </Section>
 
-      <Section title="6. Reporting a security concern">
+      <Section title="7. Reporting a security concern">
         <p>
           If you notice suspicious activity or a possible vulnerability, please contact us through
           the{' '}

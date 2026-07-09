@@ -128,6 +128,18 @@ class AccountService {
     return (res['data'] as List).map((e) => OrderRow.fromJson(e)).toList();
   }
 
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    await _api.patch('/api/me/password', {
+      'currentPassword': currentPassword,
+      'newPassword': newPassword,
+    });
+  }
+
+  /// Permanently deletes the signed-in account and its personal data.
+  Future<void> deleteAccount(String password) async {
+    await _api.delete('/api/me', {'password': password});
+  }
+
   Future<CheckoutResult> checkout(String packageId, {String? couponCode}) async {
     final res = await _api.post('/api/checkout', {
       'packageId': packageId,

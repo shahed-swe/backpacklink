@@ -54,7 +54,7 @@ export default function TermsPage() {
       <Section title="4. eSIM delivery & activation">
         <List
           items={[
-            'Your eSIM QR code is delivered to your account and by email, usually within seconds of a successful payment.',
+            'Your eSIM QR code appears in your account — in the app and on the website — within seconds of a successful payment.',
             'A plan’s validity period starts according to the terms of that specific plan — often on first network connection in the destination. Check the plan details before you travel.',
             'Each eSIM QR code is intended for a single installation. Deleting the eSIM from your device may prevent reinstallation.',
           ]}

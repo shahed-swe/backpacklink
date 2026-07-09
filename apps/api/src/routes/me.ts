@@ -1,7 +1,9 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import type { Esim } from '@prisma/client';
 import { asyncHandler } from '../middleware/error.js';
 import { requireAuth } from '../middleware/auth.js';
+import { changePassword, deleteAccount } from '../auth/service.js';
 import { prisma } from '../lib/db.js';
 import { esimcard } from '../esimcard/service.js';
 import { normalizeUsage } from '../esimcard/normalize.js';
@@ -79,5 +81,34 @@ meRouter.get(
       include: { esim: true },
     });
     res.json({ ok: true, data: orders });
+  }),
+);
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+// PATCH /api/me/password — change the signed-in customer's password.
+meRouter.patch(
+  '/password',
+  asyncHandler(async (req, res) => {
+    const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+    await changePassword(req.userId!, currentPassword, newPassword);
+    res.json({ ok: true });
+  }),
+);
+
+const deleteAccountSchema = z.object({
+  password: z.string().min(1, 'Password is required'),
+});
+
+// DELETE /api/me — permanently delete the account (App Store guideline 5.1.1(v)).
+meRouter.delete(
+  '/',
+  asyncHandler(async (req, res) => {
+    const { password } = deleteAccountSchema.parse(req.body);
+    await deleteAccount(req.userId!, password);
+    res.json({ ok: true });
   }),
 );
