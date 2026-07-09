@@ -1,6 +1,9 @@
 name: backpacklink
 description: BackpackLink — travel eSIM data plans for 200+ countries.
 publish_to: "none"
+# Drives CFBundleShortVersionString / CFBundleVersion. Flutter always normalises
+# the version name to three integers, so App Store Connect's version string must
+# be "1.0.0" (not "1.0") for the build to match.
 version: 1.0.0+10
 
 environment:

@@ -10,6 +10,7 @@ text straight into App Store Connect (ASC).
 | Item | State |
 |---|---|
 | Build `1.0.0 (10)` | Uploaded to App Store Connect — **submit this one** (build 9 lacks moderation) |
+| App Store version string | Must be **`1.0.0`**, not `1.0` — Flutter always normalises the version name to three integers, so a `1.0` version in ASC won't match the build. Edit it in ASC (the app is still `PREPARE_FOR_SUBMISSION`). |
 | Bundle ID | `com.backpacklink.app` |
 | Team | `UF647J47K8` (Didarul Islam) |
 | Signing | Manual, profile `backpack`, `ios/ExportOptions.plist` |
