@@ -28,6 +28,79 @@ class _CommunityScreenState extends State<CommunityScreen> {
     _reload();
   }
 
+  /// Reporting and blocking need an account, so send signed-out users to login.
+  bool _requireLogin() {
+    final state = context.read<AppState>();
+    if (state.isLoggedIn) return true;
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+    return false;
+  }
+
+  Future<void> _report(Tip t) async {
+    if (!_requireLogin()) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Report this tip?'),
+        content: const Text(
+          'Tell us this post is offensive, misleading or spam. Our moderators '
+          'review reports within 24 hours, and a tip reported by several '
+          'travellers is hidden straight away.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: BpColors.coral),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Report'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await context.read<AppState>().community.report(t.id);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Thanks — our moderators will review this tip.')),
+      );
+      _reload();
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
+  Future<void> _block(Tip t) async {
+    if (!_requireLogin()) return;
+    final who = t.authorName ?? 'this traveller';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Block $who?'),
+        content: Text("You won't see any tips from $who again."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: BpColors.coral),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Block'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await context.read<AppState>().community.blockUser(t.authorId!);
+      messenger.showSnackBar(SnackBar(content: Text('$who is blocked.')));
+      _reload();
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
   void _openComposer() {
     final state = context.read<AppState>();
     if (!state.isLoggedIn) {
@@ -43,6 +116,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final myId = context.watch<AppState>().user?.id;
     return Scaffold(
       appBar: AppBar(title: const Text('Community tips')),
       floatingActionButton: FloatingActionButton.extended(
@@ -78,7 +152,28 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       Row(children: [
                         BpChip.brand(t.country),
                         const SizedBox(width: 8),
-                        Text(t.authorName ?? 'A traveler', style: TextStyle(fontSize: 12, color: BpColors.inkFade(0.4))),
+                        Expanded(
+                          child: Text(
+                            t.authorName ?? 'A traveler',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 12, color: BpColors.inkFade(0.4)),
+                          ),
+                        ),
+                        PopupMenuButton<String>(
+                          tooltip: 'More',
+                          padding: EdgeInsets.zero,
+                          icon: Icon(Icons.more_horiz, size: 20, color: BpColors.inkFade(0.4)),
+                          onSelected: (v) {
+                            if (v == 'report') _report(t);
+                            if (v == 'block') _block(t);
+                          },
+                          itemBuilder: (_) => [
+                            const PopupMenuItem(value: 'report', child: Text('Report post')),
+                            // You can't block yourself, and we need an author id to do it.
+                            if (t.authorId != null && t.authorId != myId)
+                              const PopupMenuItem(value: 'block', child: Text('Block traveller')),
+                          ],
+                        ),
                       ]),
                       const SizedBox(height: 8),
                       Text(t.body),

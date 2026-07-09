@@ -95,6 +95,13 @@ export async function deleteAccount(userId: string, password: string) {
       await tx.supportMessage.deleteMany({ where: { threadId: thread.id } });
       await tx.supportThread.delete({ where: { id: thread.id } });
     }
+    // Moderation rows point at both the reporter and the tip, so they have to go
+    // before the tips do — otherwise the foreign keys block the delete.
+    await tx.tipReport.deleteMany({ where: { reporterId: userId } });
+    await tx.tipReport.deleteMany({ where: { tip: { userId } } });
+    await tx.userBlock.deleteMany({
+      where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+    });
     await tx.tip.deleteMany({ where: { userId } });
     await tx.user.update({
       where: { id: userId },

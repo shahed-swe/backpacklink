@@ -46,6 +46,31 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   }
 }
 
+/**
+ * Populates the user context when a valid token is present, but never rejects.
+ * Used by public feeds that still need to know the viewer — e.g. to hide tips
+ * from travellers they've blocked.
+ */
+export async function optionalAuth(req: Request, _res: Response, next: NextFunction) {
+  const header = req.headers.authorization;
+  if (!header?.startsWith('Bearer ')) return next();
+  try {
+    const payload = verifyToken(header.slice(7));
+    const user = await prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: { id: true, email: true, role: true, deletedAt: true },
+    });
+    if (user && !user.deletedAt) {
+      req.userId = user.id;
+      req.userRole = user.role;
+      req.userEmail = user.email;
+    }
+  } catch {
+    // An invalid token just means "anonymous viewer" here.
+  }
+  next();
+}
+
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (req.userRole !== 'admin') {
     return res.status(403).json({ ok: false, error: 'Admin access required' });

@@ -9,6 +9,7 @@ interface Tip {
   body: string;
   status: string;
   likes: number;
+  reports: number;
   createdAt: string;
   user: { email: string; name: string | null } | null;
 }
@@ -27,7 +28,10 @@ export default function TipsModeration() {
   return (
     <div>
       <h1 className="font-display text-2xl font-extrabold text-ink">Community tips</h1>
-      <p className="mt-1 text-sm text-ink/50">Moderate what appears in the community feed.</p>
+      <p className="mt-1 text-sm text-ink/50">
+        Moderate what appears in the community feed. Reported tips are listed first, and a tip
+        reported by 3 travellers is hidden automatically until you review it.
+      </p>
 
       <div className="mt-5 space-y-3">
         {tips.length === 0 ? (
@@ -40,6 +44,11 @@ export default function TipsModeration() {
                   <div className="flex items-center gap-2">
                     <span className="chip bg-brand-50 text-brand-700">{t.country}</span>
                     {t.status === 'hidden' && <span className="chip bg-coral-100 text-coral-700">hidden</span>}
+                    {t.reports > 0 && (
+                      <span className="chip bg-coral-100 font-semibold text-coral-700">
+                        ⚑ {t.reports} report{t.reports === 1 ? '' : 's'}
+                      </span>
+                    )}
                     <span className="text-xs text-ink/40">❤ {t.likes}</span>
                   </div>
                   <p className="mt-2 text-ink">{t.body}</p>

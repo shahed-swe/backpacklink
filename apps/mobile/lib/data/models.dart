@@ -284,13 +284,26 @@ class Tip {
   final String id, country, body;
   final int likes;
   final String? authorName;
-  Tip({required this.id, required this.country, required this.body, required this.likes, this.authorName});
+
+  /// Author id — needed to block the traveller who posted this tip.
+  final String? authorId;
+
+  Tip({
+    required this.id,
+    required this.country,
+    required this.body,
+    required this.likes,
+    this.authorName,
+    this.authorId,
+  });
+
   factory Tip.fromJson(Map<String, dynamic> j) => Tip(
         id: '${j['id']}',
         country: '${j['country']}',
         body: '${j['body']}',
         likes: _toInt(j['likes']),
         authorName: (j['user'] is Map) ? j['user']['name'] : null,
+        authorId: (j['user'] is Map && j['user']['id'] != null) ? '${j['user']['id']}' : null,
       );
 }
 

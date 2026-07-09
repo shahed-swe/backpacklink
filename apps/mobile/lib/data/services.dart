@@ -102,6 +102,18 @@ class CommunityService {
   Future<void> like(String id) async {
     await _api.post('/api/community/tips/$id/like');
   }
+
+  /// Flag a tip for moderation. Enough reports hide it from everyone's feed.
+  Future<void> report(String tipId, {String? reason}) async {
+    await _api.post('/api/community/tips/$tipId/report', {
+      if (reason != null && reason.isNotEmpty) 'reason': reason,
+    });
+  }
+
+  /// Hide every tip from this traveller, for this account.
+  Future<void> blockUser(String userId) async {
+    await _api.post('/api/community/users/$userId/block');
+  }
 }
 
 /// Customer account: eSIMs, usage, orders, checkout.

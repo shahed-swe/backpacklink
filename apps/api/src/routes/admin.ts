@@ -221,16 +221,22 @@ adminRouter.patch(
 
 // --- Community moderation ---
 
-// GET /api/admin/tips — all tips (including hidden).
+// GET /api/admin/tips — all tips (including hidden), most-reported first so
+// anything the community flagged lands at the top of the moderation queue.
 adminRouter.get(
   '/tips',
   asyncHandler(async (_req, res) => {
     const tips = await prisma.tip.findMany({
       orderBy: { createdAt: 'desc' },
       take: 200,
-      include: { user: { select: { email: true, name: true } } },
+      include: {
+        user: { select: { email: true, name: true } },
+        _count: { select: { reports: true } },
+      },
     });
-    res.json({ ok: true, data: tips });
+    const withReports = tips.map(({ _count, ...tip }) => ({ ...tip, reports: _count.reports }));
+    withReports.sort((a, b) => b.reports - a.reports);
+    res.json({ ok: true, data: withReports });
   }),
 );
 

@@ -29,6 +29,10 @@ model User {
   orders        Order[]
   supportThread SupportThread?
   tips          Tip[]
+
+  tipReports     TipReport[]
+  blocksMade     UserBlock[] @relation("BlocksMade")
+  blocksReceived UserBlock[] @relation("BlocksReceived")
 }
 
 // The critical customer <-> eSIM mapping. esimcard has no idea which customer
@@ -157,6 +161,8 @@ model Tip {
   likes     Int      @default(0)
   createdAt DateTime @default(now())
 
+  reports TipReport[]
+
   @@index([status])
   @@index([country])
 }
@@ -226,4 +232,34 @@ model Coupon {
   orders Order[]
 
   @@index([active])
+}
+
+// --- Community moderation (App Store guideline 1.2) ---
+// Travellers can report a tip and block another traveller. A tip that collects
+// TIP_REPORT_HIDE_THRESHOLD reports is hidden from the feed automatically and
+// waits for an admin to review it.
+model TipReport {
+  id         String   @id @default(cuid())
+  tipId      String
+  tip        Tip      @relation(fields: [tipId], references: [id])
+  reporterId String
+  reporter   User     @relation(fields: [reporterId], references: [id])
+  reason     String?
+  createdAt  DateTime @default(now())
+
+  // One report per traveller per tip.
+  @@unique([tipId, reporterId])
+  @@index([tipId])
+}
+
+model UserBlock {
+  id        String   @id @default(cuid())
+  blockerId String
+  blocker   User     @relation("BlocksMade", fields: [blockerId], references: [id])
+  blockedId String
+  blocked   User     @relation("BlocksReceived", fields: [blockedId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
 }
