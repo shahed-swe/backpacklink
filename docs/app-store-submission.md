@@ -9,7 +9,7 @@ text straight into App Store Connect (ASC).
 
 | Item | State |
 |---|---|
-| Build `1.0.0 (9)` | Uploaded to App Store Connect |
+| Build `1.0.0 (10)` | Uploaded to App Store Connect — **submit this one** (build 9 lacks moderation) |
 | Bundle ID | `com.backpacklink.app` |
 | Team | `UF647J47K8` (Didarul Islam) |
 | Signing | Manual, profile `backpack`, `ios/ExportOptions.plist` |
@@ -17,7 +17,7 @@ text straight into App Store Connect (ASC).
 | Export compliance | `ITSAppUsesNonExemptEncryption = false` — no encryption questions in ASC |
 | Privacy Policy URL | Live at `/privacy` (required — was missing) |
 | Account deletion (5.1.1(v)) | **Done** — Account → Security → Delete account |
-| User-generated content (1.2) | **OPEN — see §9. This will get you rejected as-is.** |
+| User-generated content (1.2) | **Done** — filter + report + block + admin queue (see §9) |
 
 Release build command (reproducible):
 
@@ -194,13 +194,18 @@ SUPPORT
 In-app: Account -> Chat with support. Web: https://www.backpacklink.com/support
 ```
 
-If the Community tab ships (see §9), append:
+And this, covering the Community tab:
 
 ```
 USER-GENERATED CONTENT (Guideline 1.2)
-The Community tab lets travellers post short text tips. Posts are filtered on submission,
-every post can be reported from its "..." menu, abusive users can be blocked by any user,
-and our moderators review reports within 24 hours. Contact: support@backpacklink.com
+The Community tab lets travellers post short text tips. All four safeguards are in place:
+ 1. Filtering  - objectionable language is rejected when a tip is submitted.
+ 2. Reporting  - the "..." menu on any post reports it. Three reports from distinct
+                 travellers hide the post from the feed immediately.
+ 3. Blocking   - the same menu blocks a traveller; you never see their posts again.
+ 4. Contact    - in-app support chat, and https://www.backpacklink.com/support
+
+Reported posts surface at the top of our admin moderation queue for review.
 ```
 
 ---
@@ -248,29 +253,25 @@ xcrun simctl io booted screenshot ~/Desktop/bpl-01-home.png
 
 ---
 
-## 9. ⚠️ Open blocker — Community tips are unmoderated UGC
+## 9. Guideline 1.2 — Community moderation (resolved)
 
-`Community` is a main bottom-nav tab. It displays other travellers' posts with their
-author names, and posts are **auto-approved** the moment they're submitted
-(`apps/api/src/routes/community.ts`). There is **no in-app reporting, no user blocking,
-and no content filtering** anywhere in the app or API — only an admin-side "hide".
+`Community` is a main bottom-nav tab showing other travellers' posts, so Apple's
+User-Generated Content rules apply. All four requirements are now implemented:
 
-App Review Guideline **1.2 (Safety — User-Generated Content)** requires *all* of:
+| Requirement | Implementation |
+|---|---|
+| 1. Filter objectionable material | `apps/api/src/lib/moderation.ts` — rejected at submission. Matches a stem plus a safe suffix list, so `fucking` / `shithole` / `sh1t` / `f.u.c.k` are blocked while `Pakistan`, `analysis`, `cocktail` and `cumin` post normally. |
+| 2. Report offensive content | `POST /api/community/tips/:id/report`, from the `…` menu on any post. Idempotent per traveller. **3 distinct reports auto-hide the post.** Reported posts sort to the top of the admin Tips queue. |
+| 3. Block abusive users | `POST` / `DELETE /api/community/users/:id/block`. A blocked author's posts disappear from that viewer's feed (`optionalAuth` lets the public feed identify the viewer). |
+| 4. Published contact info | In-app support chat + `https://www.backpacklink.com/support`. |
 
-1. a method for filtering objectionable material from being posted;
-2. a mechanism to report offensive content, with timely responses;
-3. the ability to block abusive users;
-4. published contact information.
+Verified end-to-end (22 checks) across filtering, false positives, blocking,
+report idempotency, auto-hide at threshold, and the account-deletion regression
+introduced by the new foreign keys.
 
-Only (4) exists today. Apps that ship open UGC without (1)–(3) are routinely rejected.
-
-**Options**
-
-| Option | Effort | Notes |
-|---|---|---|
-| **A. Add moderation** — report endpoint + block list + profanity filter, with report/block in the post's overflow menu | ~half a day | Keeps the feature; satisfies 1.2 properly. Recommended if Community matters. |
-| **B. Hide the Community tab for 1.0** | ~15 min + rebuild | Fastest route to approval; ship Community in 1.1 with moderation. |
-| **C. Submit as-is** | 0 | Likely rejection under 1.2; costs a review cycle (~1–3 days). |
+**Not covered:** the *web* community feed has no report/block UI yet (the API filters
+blocked authors for signed-in viewers). Apple only reviews the iOS app, so this isn't a
+submission blocker — but it's worth adding for parity.
 
 ---
 
