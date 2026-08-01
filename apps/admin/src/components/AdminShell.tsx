@@ -16,6 +16,9 @@ const nav = [
   { href: '/sources', label: 'Traffic Sources', icon: '📈' },
   { href: '/support', label: 'Support', icon: '💬' },
   { href: '/tips', label: 'Community', icon: '🌍' },
+  { href: '/faqs', label: 'FAQ', icon: '❓' },
+  { href: '/articles', label: 'Blog', icon: '📝' },
+  { href: '/testimonials', label: 'Testimonials', icon: '💬' },
   { href: '/settings', label: 'Pricing & Settings', icon: '⚙️' },
 ];
 

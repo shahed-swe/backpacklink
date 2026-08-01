@@ -41,3 +41,24 @@
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold;
   }
 }
+
+/* --- Hero motion (subtle, CSS-only; disabled for reduced-motion) --- */
+@keyframes bpl-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+@keyframes bpl-ping {
+  0%   { transform: scale(0.5); opacity: 0.55; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+@keyframes bpl-orbit {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.bpl-float { animation: bpl-float 6s ease-in-out infinite; }
+.bpl-ping  { animation: bpl-ping 3s cubic-bezier(0, 0, 0.2, 1) infinite; }
+.bpl-orbit { animation: bpl-orbit 18s linear infinite; transform-origin: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bpl-float, .bpl-ping, .bpl-orbit { animation: none; }
+}

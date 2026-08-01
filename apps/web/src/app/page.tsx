@@ -4,7 +4,10 @@ import { CountryCard } from '@/components/CountryCard';
 import { HeroSearch } from '@/components/HeroSearch';
 import { Hero } from '@/components/Hero';
 import { TrustBar } from '@/components/TrustBar';
+import { CompatibleDevices } from '@/components/CompatibleDevices';
 import { Testimonials } from '@/components/Testimonials';
+import { BlogTeaser } from '@/components/BlogTeaser';
+import { FAQ } from '@/components/FAQ';
 
 // Render at request time so live catalog data always shows (avoids an empty
 // build-time prerender when the API isn't reachable during `next build`).
@@ -120,7 +123,13 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <CompatibleDevices />
+
       <Testimonials />
+
+      <BlogTeaser />
+
+      <FAQ />
 
       {/* CTA */}
       <section className="container-bp py-16">

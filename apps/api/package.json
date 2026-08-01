@@ -9,6 +9,7 @@
     "start": "tsx src/index.ts",
     "make-admin": "tsx src/scripts/make-admin.ts",
     "seed-admin": "tsx src/scripts/seed-admin.ts",
+    "seed-content": "tsx src/scripts/seed-content.ts",
     "reset-admin": "tsx src/scripts/reset-admin-password.ts",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",

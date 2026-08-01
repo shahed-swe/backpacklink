@@ -14,6 +14,8 @@ import { couponsRouter } from './routes/coupons.js';
 import { meRouter } from './routes/me.js';
 import { webhookRouter } from './routes/webhooks.js';
 import { adminRouter } from './routes/admin.js';
+import { contentRouter } from './routes/content.js';
+import { adminContentRouter } from './routes/admin-content.js';
 import { supportRouter } from './routes/support.js';
 import { communityRouter } from './routes/community.js';
 import { rateLimit } from './middleware/rateLimit.js';
@@ -40,6 +42,7 @@ export function createApp() {
   app.use('/api/version', versionRouter);
   app.use('/api/catalog', catalogRouter);
   app.use('/api/promotions', promotionsRouter);
+  app.use('/api', contentRouter); // /api/faqs, /api/articles, /api/testimonials
 
   // Serve uploaded banner images — cross-origin so the web + app can embed them.
   ensureUploadDir();
@@ -56,6 +59,7 @@ export function createApp() {
   app.use('/api/support', supportRouter);
   app.use('/api/community', communityRouter);
   app.use('/api/admin', adminRouter);
+  app.use('/api/admin', adminContentRouter); // FAQ / articles / testimonials CRUD
 
   app.get('/', (_req, res) => {
     res.json({ ok: true, service: 'BackpackLink API', docs: '/api/health' });

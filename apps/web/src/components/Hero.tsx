@@ -96,22 +96,41 @@ export function Hero({ banners, children }: { banners: Promotion[]; children: Re
               <div className="mt-8">{children}</div>
             </div>
 
-            {/* floating price cards (default hero only) */}
-            <div className="relative hidden md:block">
-              <div className="absolute right-0 top-4 w-64 rotate-3 rounded-3xl bg-white p-5 shadow-card">
-                <p className="text-xs font-semibold text-ink/40">JAPAN · 5 GB</p>
-                <p className="mt-1 font-display text-2xl font-extrabold text-ink">30 days</p>
-                <div className="mt-3 flex items-center justify-between">
-                  <span className="chip bg-brand-50 text-brand-700">4G/5G</span>
-                  <span className="font-display font-bold text-brand-700">$12.90</span>
+            {/* Animated connectivity graphic + floating price cards (default hero only) */}
+            <div className="relative hidden min-h-[22rem] md:block">
+              {/* Signal rings + globe + orbiting satellite (behind the cards) */}
+              <div className="pointer-events-none absolute inset-0 grid place-items-center" aria-hidden>
+                <div className="relative h-56 w-56">
+                  <span className="bpl-ping absolute inset-0 rounded-full border border-white/25" />
+                  <span className="bpl-ping absolute inset-0 rounded-full border border-white/25" style={{ animationDelay: '1s' }} />
+                  <span className="bpl-ping absolute inset-0 rounded-full border border-white/25" style={{ animationDelay: '2s' }} />
+                  <span className="absolute inset-10 grid place-items-center rounded-full bg-white/10 text-5xl backdrop-blur-sm">
+                    🌐
+                  </span>
+                  <span className="bpl-orbit absolute inset-0 block">
+                    <span className="absolute left-1/2 top-0 block h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-coral-400 shadow-glow" />
+                  </span>
                 </div>
               </div>
-              <div className="absolute right-32 top-44 w-60 -rotate-3 rounded-3xl bg-ink p-5 text-white shadow-card">
-                <p className="text-xs font-semibold text-white/50">EUROPE · 10 GB</p>
-                <p className="mt-1 font-display text-2xl font-extrabold">30 days</p>
-                <div className="mt-3 flex items-center justify-between">
-                  <span className="chip bg-white/10 text-white">36 countries</span>
-                  <span className="font-display font-bold text-coral-400">$18.40</span>
+
+              <div className="bpl-float absolute right-0 top-4 w-64">
+                <div className="rotate-3 rounded-3xl bg-white p-5 shadow-card">
+                  <p className="text-xs font-semibold text-ink/40">JAPAN · 5 GB</p>
+                  <p className="mt-1 font-display text-2xl font-extrabold text-ink">30 days</p>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="chip bg-brand-50 text-brand-700">4G/5G</span>
+                    <span className="font-display font-bold text-brand-700">$12.90</span>
+                  </div>
+                </div>
+              </div>
+              <div className="bpl-float absolute right-32 top-44 w-60" style={{ animationDelay: '-3s' }}>
+                <div className="-rotate-3 rounded-3xl bg-ink p-5 text-white shadow-card">
+                  <p className="text-xs font-semibold text-white/50">EUROPE · 10 GB</p>
+                  <p className="mt-1 font-display text-2xl font-extrabold">30 days</p>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="chip bg-white/10 text-white">36 countries</span>
+                    <span className="font-display font-bold text-coral-400">$18.40</span>
+                  </div>
                 </div>
               </div>
             </div>

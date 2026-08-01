@@ -1,4 +1,5 @@
 import type { Country, Continent, Package, PackageType, Promotions } from './types';
+import type { ArticleSummary, Article, Faq, Testimonial } from './blog';
 
 const API_URL = process.env.API_URL ?? 'http://localhost:4000';
 
@@ -61,6 +62,18 @@ export const api = {
 
   // Platform version (shown in the footer).
   version: () => safe(() => get<{ version: string }>('/api/version', 300).then((r) => r.version), ''),
+
+  // Admin-managed content. Short revalidate so edits appear quickly.
+  faqs: () => safe(() => get<{ data: Faq[] }>('/api/faqs', 60).then((r) => r.data), []),
+
+  articles: () =>
+    safe(() => get<{ data: ArticleSummary[] }>('/api/articles', 60).then((r) => r.data), []),
+
+  article: (slug: string) =>
+    safe(() => get<{ data: Article }>(`/api/articles/${slug}`, 60).then((r) => r.data), null),
+
+  testimonials: () =>
+    safe(() => get<{ data: Testimonial[] }>('/api/testimonials', 60).then((r) => r.data), []),
 };
 
 export function slugify(s: string): string {

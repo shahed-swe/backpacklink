@@ -1,55 +1,4 @@
-// Customer testimonials + review screenshots.
-//
-// >>> REPLACE the sample entries below with real testimonials. To show a review
-//     screenshot (App Store review, WhatsApp message, etc.), drop the image in
-//     apps/web/public/testimonials/ and set `image: '/testimonials/your-file.jpg'`.
-//     A card renders fine with or without a screenshot.
-type Testimonial = {
-  name: string;
-  location: string;
-  quote: string;
-  rating?: number; // 1–5, defaults to 5
-  image?: string; // optional screenshot under /public/testimonials/
-};
-
-const TESTIMONIALS: Testimonial[] = [
-  {
-    name: 'Sarah M.',
-    location: 'Japan trip',
-    quote:
-      'Landed at Narita, scanned the QR, and had data before I got off the plane. No SIM swapping, no airport kiosk queue. Exactly what I needed.',
-  },
-  {
-    name: 'David R.',
-    location: 'Europe, 3 countries',
-    quote:
-      'One plan covered France, Italy and Spain. Cheaper than a single day of my carrier’s roaming. I’m never going back.',
-  },
-  {
-    name: 'Aisha K.',
-    location: 'Thailand',
-    quote:
-      'Was nervous about eSIMs but the install guide made it dead simple. Speeds were great for maps and video calls home.',
-  },
-  {
-    name: 'Marco P.',
-    location: 'USA',
-    quote:
-      'Bought it the night before my flight. Instant delivery, worked the moment I landed in New York. Support answered my question in minutes.',
-  },
-  {
-    name: 'Lena T.',
-    location: 'UAE',
-    quote:
-      'Kept my normal number active for calls while using BackpackLink for data. Best of both worlds on a two-week trip.',
-  },
-  {
-    name: 'James O.',
-    location: 'Indonesia',
-    quote:
-      'Topped up right from the app when I ran low in Bali. Took two taps. Genuinely the easiest travel data I’ve used.',
-  },
-];
+import { api } from '@/lib/api';
 
 function Stars({ n = 5 }: { n?: number }) {
   return (
@@ -63,7 +12,11 @@ function Stars({ n = 5 }: { n?: number }) {
   );
 }
 
-export function Testimonials() {
+// Real customer testimonials — admin-managed (admin panel → Testimonials).
+export async function Testimonials() {
+  const testimonials = await api.testimonials();
+  if (testimonials.length === 0) return null;
+
   return (
     <section className="bg-sand-100 py-20">
       <div className="container-bp">
@@ -77,14 +30,14 @@ export function Testimonials() {
         </div>
 
         <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {TESTIMONIALS.map((t) => (
-            <figure key={t.name + t.location} className="card flex flex-col p-6">
-              <Stars n={t.rating ?? 5} />
+          {testimonials.map((t) => (
+            <figure key={t.id} className="card flex flex-col p-6">
+              <Stars n={t.rating} />
 
-              {t.image && (
+              {t.imageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={t.image}
+                  src={t.imageUrl}
                   alt={`Review from ${t.name}`}
                   className="mt-4 w-full rounded-xl border border-brand-100 object-cover"
                   loading="lazy"
@@ -101,7 +54,7 @@ export function Testimonials() {
                 </span>
                 <div>
                   <p className="text-sm font-bold text-ink">{t.name}</p>
-                  <p className="text-xs text-ink/50">{t.location}</p>
+                  {t.location && <p className="text-xs text-ink/50">{t.location}</p>}
                 </div>
               </figcaption>
             </figure>

@@ -26,6 +26,7 @@ export async function Footer() {
           title="Support"
           links={[
             { href: '/how-it-works', label: 'How it works' },
+            { href: '/blog', label: 'Blog' },
             { href: '/faq', label: 'FAQ' },
             { href: '/help', label: 'Install guide' },
           ]}

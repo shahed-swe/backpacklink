@@ -17,4 +17,4 @@ RUN npx prisma generate
 EXPOSE 4000
 
 # On boot: sync the DB schema, ensure an admin exists, then start the API.
-CMD ["sh", "-c", "npx prisma db push --skip-generate && npm run seed-admin && npm run start"]
+CMD ["sh", "-c", "npx prisma db push --skip-generate && npm run seed-admin && npm run seed-content && npm run start"]

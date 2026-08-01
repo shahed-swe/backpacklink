@@ -263,3 +263,47 @@ model UserBlock {
   @@unique([blockerId, blockedId])
   @@index([blockerId])
 }
+
+// --- Admin-managed content (FAQ, blog, testimonials) ---
+model Faq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  sortOrder Int      @default(0) // lower shows first
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active])
+}
+
+model Article {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  title         String
+  excerpt       String
+  emoji         String   @default("📝") // cover art when no image
+  coverImageUrl String?
+  body          String // markdown-ish: blank line = new paragraph, "## " = heading
+  readMins      Int      @default(3)
+  published     Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([published])
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  location  String?
+  quote     String
+  rating    Int      @default(5)
+  imageUrl  String? // optional review screenshot
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active])
+}
