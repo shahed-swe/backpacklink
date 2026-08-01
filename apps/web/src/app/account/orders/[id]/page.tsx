@@ -7,6 +7,7 @@ import { AuthGate } from '@/components/AuthGate';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useApi } from '@/lib/use-api';
 import { apiFetch } from '@/lib/client-api';
+import { trackPurchase } from '@/lib/analytics';
 
 interface Order {
   id: string;
@@ -50,6 +51,17 @@ function OrderDetail() {
       return () => clearTimeout(t);
     }
   }, [order, reload]);
+
+  // Fire the Purchase conversion once, when the order is completed. Guarded by
+  // sessionStorage so a refresh of the confirmation page doesn't double-count.
+  useEffect(() => {
+    if (!order || order.status !== 'completed') return;
+    const key = `bpl_purchase_tracked_${order.id}`;
+    if (typeof window !== 'undefined' && !sessionStorage.getItem(key)) {
+      sessionStorage.setItem(key, '1');
+      trackPurchase({ value: order.retailPrice, currency: order.currency, orderId: order.id });
+    }
+  }, [order]);
 
   if (loading) return <div className="container-bp py-24 text-center text-ink/40">Loading…</div>;
   if (!order) return <div className="container-bp py-24 text-center text-ink/50">Order not found.</div>;
