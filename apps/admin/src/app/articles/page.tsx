@@ -9,7 +9,6 @@ interface Article {
   slug: string;
   title: string;
   excerpt: string;
-  emoji: string;
   coverImageUrl: string | null;
   body: string;
   readMins: number;
@@ -20,7 +19,6 @@ interface Form {
   title: string;
   slug: string;
   excerpt: string;
-  emoji: string;
   coverImageUrl: string;
   body: string;
   readMins: string;
@@ -28,7 +26,7 @@ interface Form {
 }
 
 const emptyForm: Form = {
-  title: '', slug: '', excerpt: '', emoji: '📝', coverImageUrl: '', body: '', readMins: '3', published: true,
+  title: '', slug: '', excerpt: '', coverImageUrl: '', body: '', readMins: '3', published: true,
 };
 
 export default function Articles() {
@@ -60,7 +58,7 @@ export default function Articles() {
   function startEdit(a: Article) {
     setEditingId(a.id);
     setForm({
-      title: a.title, slug: a.slug, excerpt: a.excerpt, emoji: a.emoji,
+      title: a.title, slug: a.slug, excerpt: a.excerpt,
       coverImageUrl: a.coverImageUrl ?? '', body: a.body, readMins: String(a.readMins), published: a.published,
     });
     setMsg(null);
@@ -82,7 +80,6 @@ export default function Articles() {
       title: form.title.trim(),
       ...(form.slug.trim() ? { slug: form.slug.trim() } : {}),
       excerpt: form.excerpt.trim(),
-      emoji: form.emoji.trim() || '📝',
       coverImageUrl: form.coverImageUrl.trim() || null,
       body: form.body,
       readMins: Number(form.readMins) || 3,
@@ -137,25 +134,18 @@ export default function Articles() {
             <input value={form.title} onChange={(e) => set('title', e.target.value)}
               className="mt-1 w-full rounded-xl border border-brand-200 px-4 py-2.5 outline-none focus:border-brand-500" />
           </label>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <label className="block sm:col-span-2">
-              <span className="text-sm font-semibold text-ink/70">Slug (blank = from title)</span>
-              <input value={form.slug} onChange={(e) => set('slug', e.target.value)} placeholder="what-is-an-esim"
-                className="mt-1 w-full rounded-xl border border-brand-200 px-4 py-2.5 font-mono text-sm outline-none focus:border-brand-500" />
-            </label>
-            <label className="block">
-              <span className="text-sm font-semibold text-ink/70">Cover emoji</span>
-              <input value={form.emoji} onChange={(e) => set('emoji', e.target.value)}
-                className="mt-1 w-full rounded-xl border border-brand-200 px-4 py-2.5 outline-none focus:border-brand-500" />
-            </label>
-          </div>
+          <label className="block">
+            <span className="text-sm font-semibold text-ink/70">Slug (blank = from title)</span>
+            <input value={form.slug} onChange={(e) => set('slug', e.target.value)} placeholder="what-is-an-esim"
+              className="mt-1 w-full rounded-xl border border-brand-200 px-4 py-2.5 font-mono text-sm outline-none focus:border-brand-500" />
+          </label>
           <label className="block">
             <span className="text-sm font-semibold text-ink/70">Excerpt (short summary)</span>
             <textarea value={form.excerpt} onChange={(e) => set('excerpt', e.target.value)} rows={2}
               className="mt-1 w-full rounded-xl border border-brand-200 px-4 py-2.5 outline-none focus:border-brand-500" />
           </label>
           <div>
-            <span className="text-sm font-semibold text-ink/70">Cover image (optional — overrides emoji)</span>
+            <span className="text-sm font-semibold text-ink/70">Cover image (recommended)</span>
             <div className="mt-1 flex items-center gap-3">
               {form.coverImageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -211,7 +201,12 @@ export default function Articles() {
           <div className="mt-3 divide-y divide-brand-100/70">
             {articles.map((a) => (
               <div key={a.id} className="flex flex-wrap items-center gap-3 py-3">
-                <span className="text-xl">{a.emoji}</span>
+                {a.coverImageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={a.coverImageUrl} alt="" className="h-8 w-12 shrink-0 rounded border border-brand-100 object-cover" />
+                ) : (
+                  <span className="h-8 w-12 shrink-0 rounded bg-gradient-to-br from-brand-600 to-ink" />
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-ink">{a.title}</p>
                   <p className="truncate font-mono text-xs text-ink/40">/blog/{a.slug}</p>

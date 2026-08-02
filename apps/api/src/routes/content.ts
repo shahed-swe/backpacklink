@@ -31,7 +31,6 @@ contentRouter.get(
         slug: true,
         title: true,
         excerpt: true,
-        emoji: true,
         coverImageUrl: true,
         readMins: true,
         createdAt: true,

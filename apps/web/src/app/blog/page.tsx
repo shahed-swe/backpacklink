@@ -40,9 +40,7 @@ export default async function BlogIndex() {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={a.coverImageUrl} alt="" className="h-40 w-full object-cover" />
               ) : (
-                <div className="grid h-40 place-items-center bg-gradient-to-br from-brand-500 to-brand-700 text-6xl">
-                  {a.emoji}
-                </div>
+                <div className="h-40 w-full bg-gradient-to-br from-brand-600 to-ink" />
               )}
               <div className="flex flex-1 flex-col p-6">
                 <p className="text-xs text-ink/40">

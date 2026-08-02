@@ -32,9 +32,7 @@ export async function BlogTeaser() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={a.coverImageUrl} alt="" className="h-36 w-full object-cover" />
             ) : (
-              <div className="grid h-36 place-items-center bg-gradient-to-br from-brand-500 to-brand-700 text-5xl">
-                {a.emoji}
-              </div>
+              <div className="h-36 w-full bg-gradient-to-br from-brand-600 to-ink" />
             )}
             <div className="flex flex-1 flex-col p-5">
               <p className="text-xs text-ink/40">

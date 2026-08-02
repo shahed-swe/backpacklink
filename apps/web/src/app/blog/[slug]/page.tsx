@@ -37,12 +37,10 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           <img
             src={article.coverImageUrl}
             alt=""
-            className="mt-6 h-44 w-full rounded-3xl object-cover"
+            className="mt-6 h-56 w-full rounded-3xl object-cover"
           />
         ) : (
-          <div className="mt-6 grid h-44 place-items-center rounded-3xl bg-gradient-to-br from-brand-500 to-brand-700 text-7xl">
-            {article.emoji}
-          </div>
+          <div className="mt-6 h-56 w-full rounded-3xl bg-gradient-to-br from-brand-600 to-ink" />
         )}
 
         <p className="mt-6 text-xs text-ink/40">
@@ -88,9 +86,12 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
                   href={`/blog/${a.slug}`}
                   className="card group flex items-center gap-4 p-4"
                 >
-                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-2xl">
-                    {a.emoji}
-                  </span>
+                  {a.coverImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={a.coverImageUrl} alt="" className="h-12 w-12 shrink-0 rounded-2xl object-cover" />
+                  ) : (
+                    <span className="h-12 w-12 shrink-0 rounded-2xl bg-gradient-to-br from-brand-600 to-ink" />
+                  )}
                   <span className="text-sm font-bold text-ink group-hover:text-brand-700">
                     {a.title}
                   </span>

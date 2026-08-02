@@ -6,7 +6,6 @@ export type ArticleSummary = {
   slug: string;
   title: string;
   excerpt: string;
-  emoji: string;
   coverImageUrl: string | null;
   readMins: number;
   createdAt: string;
