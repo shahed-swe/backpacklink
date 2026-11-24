@@ -6,6 +6,7 @@ import { env } from '../env.js';
 import { prisma } from '../lib/db.js';
 import { markPaidAndFulfill } from '../orders/service.js';
 import { logger } from '../lib/logger.js';
+import { markRefundedByPaymentIntent } from '../orders/reconcile.js';
 
 export const webhookRouter = Router();
 
@@ -42,6 +43,19 @@ webhookRouter.post('/stripe', async (req: Request, res: Response) => {
         await markPaidAndFulfill(orderId, (session.payment_intent as string) ?? session.id);
         logger.info('Stripe payment completed -> fulfilled', { orderId });
       }
+    } else if (event.type === 'checkout.session.expired') {
+      // Customer opened checkout but never paid — close the order out.
+      const session = event.data.object as { metadata?: { orderId?: string } };
+      const orderId = session.metadata?.orderId;
+      if (orderId) {
+        await prisma.order.updateMany({
+          where: { id: orderId, status: 'pending' },
+          data: { status: 'abandoned', failureReason: 'Checkout expired — the customer never completed payment.' },
+        });
+      }
+    } else if (event.type === 'charge.refunded') {
+      const charge = event.data.object as { payment_intent?: string | null; refunded?: boolean };
+      if (charge.payment_intent && charge.refunded) await markRefundedByPaymentIntent(charge.payment_intent);
     }
   } catch (err) {
     // Don't 500 to Stripe (it would retry forever); log for manual reconciliation.

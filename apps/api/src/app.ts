@@ -18,6 +18,8 @@ import { contentRouter } from './routes/content.js';
 import { adminContentRouter } from './routes/admin-content.js';
 import { supportRouter } from './routes/support.js';
 import { communityRouter } from './routes/community.js';
+import { affiliateRouter } from './routes/affiliate.js';
+import { adminAffiliatesRouter } from './routes/admin-affiliates.js';
 import { rateLimit } from './middleware/rateLimit.js';
 import { errorHandler, notFound } from './middleware/error.js';
 
@@ -58,8 +60,10 @@ export function createApp() {
   app.use('/api/me', meRouter);
   app.use('/api/support', supportRouter);
   app.use('/api/community', communityRouter);
+  app.use('/api/affiliate', affiliateRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/admin', adminContentRouter); // FAQ / articles / testimonials CRUD
+  app.use('/api/admin', adminAffiliatesRouter); // affiliate program
 
   app.get('/', (_req, res) => {
     res.json({ ok: true, service: 'BackpackLink API', docs: '/api/health' });

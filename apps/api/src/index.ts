@@ -5,6 +5,8 @@ import { logger } from './lib/logger.js';
 import { getSetting } from './lib/settings.js';
 import { setMarkupPercent } from './catalog/pricing.js';
 import { initSocket } from './realtime/socket.js';
+import { sweepStaleOrders } from './orders/reconcile.js';
+import { releaseMaturedCommissions } from './affiliates/service.js';
 
 // Last-resort safety net: log instead of letting the process die silently.
 process.on('unhandledRejection', (reason) => {
@@ -26,6 +28,15 @@ async function bootstrap() {
   const app = createApp();
   const httpServer = http.createServer(app);
   initSocket(httpServer); // attach socket.io for live support chat
+
+  // Every 30 min: settle unpaid checkouts with Stripe + release matured
+  // affiliate commissions. First run shortly after boot.
+  const housekeeping = () => {
+    sweepStaleOrders().catch((err) => logger.warn('Order sweep failed', { err: String(err) }));
+    releaseMaturedCommissions().catch((err) => logger.warn('Commission release failed', { err: String(err) }));
+  };
+  setTimeout(housekeeping, 60_000).unref();
+  setInterval(housekeeping, 30 * 60_000).unref();
 
   httpServer.listen(env.PORT, () => {
     logger.info(`BackpackLink API listening on http://localhost:${env.PORT}`, {

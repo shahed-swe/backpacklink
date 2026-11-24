@@ -29,6 +29,7 @@ model User {
   orders        Order[]
   supportThread SupportThread?
   tips          Tip[]
+  affiliate     Influencer?
 
   tipReports     TipReport[]
   blocksMade     UserBlock[] @relation("BlocksMade")
@@ -75,6 +76,7 @@ model Order {
   wholesalePrice    Float
   currency          String   @default("USD")
   // pending -> paid -> fulfilling -> completed | failed | refunded
+  // pending -> abandoned when the Stripe Checkout session expires unpaid
   status            String   @default("pending")
   isTopup           Boolean  @default(false)
   topupIccid        String?
@@ -94,6 +96,8 @@ model Order {
   medium         String? // utm_medium
   campaign       String? // utm_campaign
   referrer       String? // document.referrer host
+
+  commission AffiliateCommission?
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -191,6 +195,8 @@ model Promotion {
 }
 
 // --- Growth: influencers / affiliates ---
+// An Influencer is an affiliate. Admin-created ones have no login; self-serve
+// affiliates sign up on affiliate.backpacklink.com and are linked to a User.
 model Influencer {
   id              String   @id @default(cuid())
   name            String
@@ -201,13 +207,82 @@ model Influencer {
   commissionType  String? // "percent" | "fixed" | null
   commissionValue Float? // e.g. 10 => 10% or $10 per sale
   active          Boolean  @default(true)
+
+  // --- Self-serve affiliate program ---
+  userId        String?   @unique
+  user          User?     @relation(fields: [userId], references: [id])
+  // pending (applied) -> approved | rejected; admin-created rows are "approved"
+  status        String    @default("approved")
+  website       String? // main channel / site URL
+  audience      String? // applicant's pitch: audience size, niche, how they'll promote
+  country       String?
+  payoutMethod  String? // paypal | bank | wise | other
+  payoutDetails String? // e.g. PayPal email / IBAN — free text, admin-only + owner
+  adminNote     String?
+  approvedAt    DateTime?
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  coupons Coupon[]
-  orders  Order[]
+  coupons     Coupon[]
+  orders      Order[]
+  clicks      AffiliateClick[]
+  commissions AffiliateCommission[]
+  payouts     AffiliatePayout[]
 
   @@index([refCode])
+  @@index([status])
+}
+
+// One row per tracked ?ref= landing (deduped per visitor per day client-side).
+model AffiliateClick {
+  id           String     @id @default(cuid())
+  influencerId String
+  influencer   Influencer @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  landingPath  String?
+  referrer     String?
+  createdAt    DateTime   @default(now())
+
+  @@index([influencerId, createdAt])
+}
+
+// Commission earned on one completed, attributed order.
+// pending (in hold period) -> approved -> paid ; void if the order is refunded.
+model AffiliateCommission {
+  id           String           @id @default(cuid())
+  orderId      String           @unique
+  order        Order            @relation(fields: [orderId], references: [id])
+  influencerId String
+  influencer   Influencer       @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  orderAmount  Float // retail actually paid
+  amount       Float // commission owed
+  currency     String           @default("USD")
+  status       String           @default("pending")
+  payoutId     String?
+  payout       AffiliatePayout? @relation(fields: [payoutId], references: [id])
+  note         String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([influencerId, status])
+  @@index([status])
+}
+
+// A payment the admin made to an affiliate (bundles approved commissions).
+model AffiliatePayout {
+  id           String                @id @default(cuid())
+  influencerId String
+  influencer   Influencer            @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  amount       Float
+  currency     String                @default("USD")
+  method       String?
+  reference    String? // PayPal txn id, bank ref…
+  note         String?
+  createdAt    DateTime              @default(now())
+
+  commissions AffiliateCommission[]
+
+  @@index([influencerId])
 }
 
 // --- Growth: coupon / discount codes ---

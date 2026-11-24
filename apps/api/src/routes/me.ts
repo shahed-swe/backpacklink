@@ -76,7 +76,8 @@ meRouter.get(
   '/orders',
   asyncHandler(async (req, res) => {
     const orders = await prisma.order.findMany({
-      where: { userId: req.userId },
+      // Abandoned checkouts (never paid) are admin-only noise for the customer.
+      where: { userId: req.userId, status: { not: 'abandoned' } },
       orderBy: { createdAt: 'desc' },
       include: { esim: true },
     });

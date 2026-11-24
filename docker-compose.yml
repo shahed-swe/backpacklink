@@ -3,6 +3,7 @@
 # Backend:  http://localhost:4000
 # Website:  http://localhost:3000
 # Admin:    http://localhost:3001   (login with ADMIN_EMAIL / ADMIN_PASSWORD)
+# Affiliate portal: http://localhost:3002
 #
 # Secrets (ESIMCARD_TOKEN, JWT_SECRET, Stripe keys, markup, etc.) are read from
 # the root .env via env_file — they are NOT baked into the images.
@@ -59,6 +60,20 @@ services:
     container_name: bpl-admin
     ports:
       - "127.0.0.1:3001:3001"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  affiliate:
+    build:
+      context: ./apps/affiliate
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+        NEXT_PUBLIC_AFFILIATE_URL: ${NEXT_PUBLIC_AFFILIATE_URL:-http://localhost:3002}
+    container_name: bpl-affiliate
+    ports:
+      - "127.0.0.1:3002:3002"
     depends_on:
       - api
     restart: unless-stopped

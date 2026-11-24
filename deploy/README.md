@@ -55,3 +55,13 @@ sudo ufw allow 22,3000,4000,3001/tcp && sudo ufw enable
 - **Postgres:** the api uses SQLite on a docker volume by default — fine to start,
   but switch `DATABASE_URL` + Prisma provider to Postgres for production scale.
 - Secrets live only in `~/backpacklink.env` on the server — never in the repo.
+
+## Affiliate portal (affiliate.backpacklink.com) — one-time setup
+The `affiliate` container (port 3002) deploys automatically with the rest. To expose it:
+1. **DNS:** add an `A` record `affiliate` → the server IP.
+2. **Nginx:** copy the updated `deploy/host-nginx/backpacklink.conf` to `/etc/nginx/sites-available/backpacklink`, then
+   `sudo nginx -t && sudo systemctl reload nginx && sudo certbot --nginx -d affiliate.backpacklink.com`.
+3. **Env (`~/backpacklink.env`):** set `NEXT_PUBLIC_AFFILIATE_URL=https://affiliate.backpacklink.com`; if `CORS_ORIGINS`
+   is restricted, add `https://affiliate.backpacklink.com`. Re-run the deploy so the URL is baked into the build.
+4. **Stripe Dashboard → Webhooks:** subscribe the endpoint to `checkout.session.expired` and `charge.refunded`
+   (in addition to `checkout.session.completed`). Unpaid checkouts are also settled by a 30-min sweeper.

@@ -13,6 +13,7 @@ import { getMarkupPercent, setMarkupPercent } from '../catalog/pricing.js';
 import { setSetting } from '../lib/settings.js';
 import { listMessages, postMessage, markThreadRead } from '../support/service.js';
 import { emitToThread, emitToAdmins } from '../realtime/io.js';
+import { syncOrderWithStripe } from '../orders/reconcile.js';
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireAdmin);
@@ -64,19 +65,47 @@ adminRouter.get(
   }),
 );
 
-// GET /api/admin/orders
+// GET /api/admin/orders?status=&q= — newest first, filterable.
+// status: completed | pending | abandoned | failed (failed+refunded) | all
 adminRouter.get(
   '/orders',
-  asyncHandler(async (_req, res) => {
-    const orders = await prisma.order.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-      include: {
-        user: { select: { email: true, name: true } },
-        esim: { select: { iccid: true, status: true } },
-      },
+  asyncHandler(async (req, res) => {
+    const status = typeof req.query.status === 'string' ? req.query.status : 'all';
+    const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+    const where: Record<string, unknown> = {};
+    if (status === 'failed') where.status = { in: ['failed', 'refunded'] };
+    else if (status === 'active') where.status = { in: ['paid', 'fulfilling'] };
+    else if (status && status !== 'all') where.status = status;
+    if (q) where.OR = [{ id: q }, { paymentRef: q }, { user: { email: { contains: q.toLowerCase() } } }];
+
+    const [orders, counts] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: 200,
+        include: {
+          user: { select: { email: true, name: true } },
+          esim: { select: { iccid: true, status: true } },
+          influencer: { select: { name: true, refCode: true } },
+        },
+      }),
+      prisma.order.groupBy({ by: ['status'], _count: { _all: true } }),
+    ]);
+    res.json({
+      ok: true,
+      data: orders,
+      counts: Object.fromEntries(counts.map((c) => [c.status, c._count._all])),
     });
-    res.json({ ok: true, data: orders });
+  }),
+);
+
+// POST /api/admin/orders/:id/sync — ask Stripe what really happened to this
+// order and settle it (fulfil if paid, mark abandoned if the checkout expired).
+adminRouter.post(
+  '/orders/:id/sync',
+  asyncHandler(async (req, res) => {
+    const result = await syncOrderWithStripe(req.params.id);
+    res.json({ ok: true, ...result });
   }),
 );
 

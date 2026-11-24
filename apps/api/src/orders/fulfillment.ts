@@ -5,6 +5,7 @@ import { esimcard } from '../esimcard/service.js';
 import { normalizeEsim } from '../esimcard/normalize.js';
 import { refundByPaymentIntent } from '../payments/stripe.js';
 import { logger } from '../lib/logger.js';
+import { recordCommissionForOrder } from '../affiliates/service.js';
 
 interface EsimRecord {
   providerEsimId: string;
@@ -61,6 +62,7 @@ export async function fulfillOrder(orderId: string): Promise<Order> {
       });
     });
     logger.info('Order fulfilled', { orderId, esimId: updated.esimId, mode: env.FULFILLMENT_MODE });
+    await recordCommissionForOrder(orderId); // affiliate earnings (no-op if unattributed)
     return updated;
   } catch (err) {
     logger.error('Fulfillment failed', { orderId, err: String(err) });

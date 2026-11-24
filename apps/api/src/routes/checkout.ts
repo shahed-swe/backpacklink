@@ -38,7 +38,9 @@ checkoutRouter.post(
     });
 
     if (stripeEnabled()) {
-      const session = await createCheckoutSession({
+      let session: Awaited<ReturnType<typeof createCheckoutSession>>;
+      try {
+        session = await createCheckoutSession({
         orderId: order.id,
         packageName: pkg.name,
         amount: order.retailPrice, // discounted price when a coupon applied
@@ -46,7 +48,15 @@ checkoutRouter.post(
         customerEmail: req.userEmail!,
         successUrl: `${env.WEB_URL}/account/orders/${order.id}?paid=1`,
         cancelUrl: `${env.WEB_URL}/plans/${pkg.id}`,
-      });
+        });
+      } catch (err) {
+        // Record WHY there is no Stripe payment instead of a silent "pending" order.
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { status: 'failed', failureReason: `Stripe checkout could not be created: ${String(err)}` },
+        });
+        throw err;
+      }
       // Remember the session so we can confirm payment without relying on a webhook.
       await prisma.order.update({ where: { id: order.id }, data: { paymentRef: session.id } });
       return res.json({ ok: true, orderId: order.id, mode: 'stripe', checkoutUrl: session.url });

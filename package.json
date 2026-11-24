@@ -14,6 +14,8 @@
     "build:web": "npm run build -w @backpacklink/web",
     "dev:admin": "npm run dev -w @backpacklink/admin",
     "build:admin": "npm run build -w @backpacklink/admin",
+    "dev:affiliate": "npm run dev -w @backpacklink/affiliate",
+    "build:affiliate": "npm run build -w @backpacklink/affiliate",
     "probe": "node scripts/probe.mjs"
   },
   "engines": {

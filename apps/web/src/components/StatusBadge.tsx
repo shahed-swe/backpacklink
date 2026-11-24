@@ -6,6 +6,7 @@ export function StatusBadge({ status }: { status: string }) {
     pending: 'bg-sand-100 text-ink/60',
     failed: 'bg-coral-100 text-coral-700',
     refunded: 'bg-coral-100 text-coral-700',
+    abandoned: 'bg-sand-100 text-ink/40',
   };
   return <span className={`chip ${map[status] ?? 'bg-sand-100 text-ink/60'}`}>{status}</span>;
 }
